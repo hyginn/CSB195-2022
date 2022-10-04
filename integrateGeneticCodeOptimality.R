@@ -261,8 +261,9 @@ library(seqinr)
 data(aaindex)
 
 myF    <- data.frame(f1 = aaindex[[  2]]$I) # hydrophobicity
-myF$f2 <-                 aaindex[[112]]$I # volume
+myF$f2 <-                 aaindex[[112]]$I  # volume
 myF$f3 <-                 aaindex[[  8]]$I  # flexibility
+                                            # (as proposed by Suyash Shivhare)
 
 # Verify that these are largely independent: calculate
 # coefficients of correlation ...
@@ -275,7 +276,6 @@ cor(myF$f2, myF$f3)
 # the valuse so that each vector's standard deviation is one. This type of
 # "normalization" is called "standardization". Scale can work on all columns
 # of a matrix-like object, like a data frame.
-
 
 myF <- scale(myF)
 

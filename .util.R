@@ -1,8 +1,8 @@
-# .util.R
+# tocID <- ".util.R"
 #
 # CSB195-2022 Class project: utility scripts
 #
-# 2022-09
+# 2022-09  - 2022-10
 # boris.steipe@utoronto.ca
 #
 # This file is source()d upon startup by .Rprofile
@@ -11,6 +11,17 @@
 #
 
 
+#TOC> ==========================================================================
+#TOC> 
+#TOC>   Section  Title                                         Line
+#TOC> -------------------------------------------------------------
+#TOC>   1        Remote control of ChimeraX                      21
+#TOC>   2        A progress bar for long-running code            96
+#TOC> 
+#TOC> ==========================================================================
+
+
+# =    1  Remote control of ChimeraX  ==========================================
 CXPORT <- 61803
 cat(sprintf("The ChimeraX port (CXPORT) is now defined as %d.\n", CXPORT))
 
@@ -83,8 +94,32 @@ CX <- function(cmd, port = CXPORT, quietly = FALSE) {
                                    # print it.
 
 }
+
+
+# =    2  A progress bar for long-running code  ================================
+
+cat("Defining pBar() ...")
+pBar <- function(i, l, nCh = 50) {
+  # Draw a progress bar in the console
+  # i: the current iteration
+  # l: the total number of iterations
+  # nCh: width of the progress bar
+  ticks <- round(seq(1, l-1, length.out = nCh))
+  if (i < l) {
+    if (any(i == ticks)) {
+      p <- which(i == ticks)[1]  # use only first, in case there are ties
+      p1 <- paste(rep("#", p), collapse = "")
+      p2 <- paste(rep("-", nCh - p), collapse = "")
+      cat(sprintf("\r|%s%s|", p1, p2))
+      flush.console()
+    }
+  }
+  else { # done
+    cat("\n")
+  }
+}
+
+
+
 cat("done.\n")
-
-
-
 # [END]

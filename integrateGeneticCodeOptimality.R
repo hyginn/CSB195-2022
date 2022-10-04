@@ -281,7 +281,7 @@ myF <- scale(myF)
 
 
 # Verify:
-colMeans(f2)
+colMeans(myF)
 
 # Change the rownames of myF to single-letter code
 rownames(myF)                              # what are the rownames now?

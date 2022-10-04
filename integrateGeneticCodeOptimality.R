@@ -126,7 +126,7 @@ str2vec <- function(s) {
 str2vec("undr")           # [1] "u" "n" "d" "r"
 str2vec("")               # character(0)
 str2vec(c("tweedledum",
-          "tweedledee")   # [1] "t" "w" "e" "e" "d" "l" "e" "d" "u" "m"
+          "tweedledee"))  # [1] "t" "w" "e" "e" "d" "l" "e" "d" "u" "m"
 
 # ==   3.2  uCode  =============================================================
 

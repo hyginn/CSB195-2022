@@ -373,8 +373,8 @@ endTime <- Sys.time()
 
 endTime - startTime                # 25 minutes for me with 100,000 trials
 
-saveRDS(sumRndSim, "sumRndSim.Rds") # ... back it up, just in case
-
+# saveRDS(sumRndSim, "sumRndSim.Rds")     # ... back it up, just in case
+sumRndSim <- readRDS("sumRndSim.Rds")
 summary(sumRndSim)
 
 

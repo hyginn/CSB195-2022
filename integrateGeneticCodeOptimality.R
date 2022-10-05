@@ -421,8 +421,8 @@ dnorm(uCodeSim, mean = mean(sumRndSim), sd = mySigma)
 
 # Just some thoughts:
 #   - Could we use this code to _evolve_ a better genetic code?
-#   - Can we distinguish between an "exploring" (i.e.: optimize change) and a
-#     "defensive" (i.e. minimize disruption) code?
+#   - Can we distinguish between an "exploring code" (i.e.: optimize change)
+#     and a "defensive code" (i.e. minimize disruption) ?
 #   - Are we making unjustified assumptions? For example: we are assuming that
 #     all adjacent codons can be reached with the same probability...
 #   - More?

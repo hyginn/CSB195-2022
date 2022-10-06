@@ -4,13 +4,14 @@
 #              R code to demonstrate exploratory data analysis (EDA)
 #              of amino acid features: PCA and t-SNE
 #
-# Version:  1.0
+# Version:  1.1
 #
 # Date:     2022-10
 # Author:   Boris Steipe (boris.steipe@utoronto.ca)
 #
 # Versions:
 #           1.0    Prepared for tutorial
+#           1.1    Refactored bestCor() - finding good correlations
 #
 #
 #
@@ -24,18 +25,19 @@
 #TOC> 
 #TOC>   Section  Title                                             Line
 #TOC> -----------------------------------------------------------------
-#TOC>   1        Dimensionality reduction                            43
-#TOC>   2        PCA introduction                                    54
-#TOC>   2.1        minimal PCA example                               85
-#TOC>   2.2        Calculate a PCA of x1 and y2                     123
-#TOC>   2.3        prcomp() and princomp()                          154
-#TOC>   2.4        Scaling                                          171
-#TOC>   3        EDA with PCA                                       188
-#TOC>   3.1        Load the aaindex data                            190
-#TOC>   3.2        Run the analysis                                 214
-#TOC>   3.3        Interpreting the principal components            244
-#TOC>   4        t-Stochastic neighbour embedding  (tsne)           295
-#TOC>   4.1        tsne of the aaindex                              317
+#TOC>   1        Dimensionality reduction                            45
+#TOC>   2        PCA introduction                                    56
+#TOC>   2.1        minimal PCA example                               87
+#TOC>   2.2        Calculate a PCA of x1 and y2                     125
+#TOC>   2.3        prcomp() and princomp()                          156
+#TOC>   2.4        Scaling                                          173
+#TOC>   3        EDA with PCA                                       190
+#TOC>   3.1        Load the aaindex data                            192
+#TOC>   3.2        Run the analysis                                 216
+#TOC>   3.3        Interpreting the principal components            246
+#TOC>   4        t-Stochastic neighbour embedding  (tsne)           314
+#TOC>   4.1        tsne of the aaindex                              336
+#TOC>   4.2        Final thoughts                                   379
 #TOC> 
 #TOC> ==========================================================================
 
@@ -260,31 +262,48 @@ summary(myCorPC)
 
 hist(myCorPC[ , 1])
 
-# identify the best
-bestCor <- function(iPC) {
-  (myBest <- max(abs(myCorPC[ ,iPC]), na.rm = TRUE))
-  sel <- abs(myCorPC[ , iPC]) == myBest
-  idx <- which(sel)[1]
+# A function to find the best correlation:
+
+bestCor <- function(V, dat = aaFeatures) {
+  # Identify that column in dataframe dat that has the highest correlation
+  # or anticorrelation with vector V. Print some information about it.
+  # Value: The index of the column (invisibly)
+  #
+  # ToDo: identify and return n-best correlations
+  #
+  cors <- numeric(ncol(dat))
+  for (i in 1:ncol(dat)) {
+    cors[i] <- cor(V, dat[ , i]) # correlation between input vector and each
+  }                              # column of the feature set in turn
+
+  myBest <- max(abs(cors), na.rm = TRUE)
+  sel <- abs(cors) == myBest   # Is TRUE for the highest absolute value in the
+                               # vector of correlation coefficients.
+  idx <- which(sel)[1]         # which() finds the index of the TRUE value(s).
+                               # Pick only the first in case there are ties.
   cat(sprintf("\n Highest correlation for index %d (%f): %s ",
               idx,
-              myCorPC[idx , iPC],
-              aaindex[[which(sel)]]$D))
-  return(invisible(NULL))
+              cors[idx],
+              aaindex[[idx]]$D))
+  return(invisible(idx))      # return the index (invisibly).
 }
 
-bestCor(1)
-bestCor(2)
-bestCor(3)
-bestCor(4)
+bestCor(pcaAA$rotation[ , 1])  # This is PC1 ...
+bestCor(pcaAA$rotation[ , 2])  # PC2
+bestCor(pcaAA$rotation[ , 3])  # etc.
+bestCor(pcaAA$rotation[ , 4])
 
-plot(PC1, PC2)
+
+plot(PC1, PC2)  # uninformative
 
 # ... we need a better way to plot this ... we need to identify the amino acids
 plot(PC1, PC2, type = n)
 text(PC1, PC2, labels = names(PC1))
 
 # ... and if the one letter codes do not tell us a lot, we need to use
-# other features so the plot can tell a story.
+# other features so the plot can tell a story. Study the function code
+# of plotAA() in the .util.R script.
+#
 plotAA(PC1, PC2)
 plotAA(PC2, PC3)
 plotAA(PC3, PC4)
@@ -336,12 +355,39 @@ tsneAA <- tsne(aaFeatures[ , sel],
                perplexity = 160,
                max_iter = 1000)
 
+# Here too we might ask: Can these reduced dimensions be interpreted? tsne()
+# returns the "collapsed" dimensions and we have assigned them the tsneAA,
+# which is just a matrix with 20 rows and 2 columns. So we can ask again: what
+# was it that tsne() found?
+
+
+bestCor(tsneAA[ , 1])
+bestCor(tsneAA[ , 2])
+
+# Are these interpretable?
+# Or are the poor correlations actually spurious? E.g.
+
+x1 <- tsneAA[ , 1]
+names(x1) <- names(aaindex[[326]]$I)
+plotAA(x1, aaindex[[326]]$I)
+
+x2 <- tsneAA[ , 2]
+names(x2) <- names(aaindex[[75]]$I)
+plotAA(x2, aaindex[[75]]$I)
+
+
+# ==   4.2  Final thoughts  ====================================================
 
 # Are we actually improving our quantitative measure of similarity when we add
 # lots and lots of data, without regard for what the data means? Can the
 # algorithm figure things out on its own?
 #
 # How would we assess that?
+#
+# The two distributions appear quite random, there are no
+# clusters of amino acids that are mutually similar. Everything seems to be
+# pretty evenly spaced. Does this mean that biology has found amino acids that
+# are quite non-redundant in their properties?
 
 
 

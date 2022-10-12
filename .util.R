@@ -12,16 +12,17 @@
 
 
 #TOC> ==========================================================================
-#TOC>
+#TOC> 
 #TOC>   Section  Title                                           Line
 #TOC> ---------------------------------------------------------------
-#TOC>   1        Remote control of ChimeraX                        28
-#TOC>   2        A progress bar for long-running code             103
-#TOC>   3        Find Keywords in aaindex                         126
-#TOC>   4        A colour palette for amino acids                 164
-#TOC>   5        Reading Google sheets                            197
-#TOC>   6        Plotting amino acids as 2D scatterplot           244
-#TOC>
+#TOC>   1        Remote control of ChimeraX                        29
+#TOC>   2        A progress bar for long-running code             104
+#TOC>   3        Find Keywords in aaindex                         127
+#TOC>   4        A colour palette for amino acids                 165
+#TOC>   5        Extracting R code from Google docs               198
+#TOC>   6        Reading Google sheets                            268
+#TOC>   7        Plotting amino acids as 2D scatterplot           315
+#TOC> 
 #TOC> ==========================================================================
 
 
@@ -194,7 +195,77 @@ AACOLS <- gsub("$", "AA", AACOLS)  # Make the colors 33% transparent
 # barplot(rep(1, 20), col = AACOLS, names.arg = names(AACOLS), cex.names=0.5)
 
 
-# =    5  Reading Google sheets  ===============================================
+# =    5  Extracting R code from Google docs  ==================================
+
+cat("  fetchGoogleDocRCode ...\n")
+
+fetchGoogleDocRCode <- function (URL,
+                                 delimB = "^# begin code",
+                                 delimE = "^# end code",
+                                 myExt = ".R") {
+
+  # Retrieve text from a Google doc, subset to a delimited range, write to
+  # a tempfile() with extension ".R", and open it in the RStudio editor.
+  # Parameters:
+  #    URL     chr   URL of a Google doc that is open to share or contained
+  #                  in a shared folder
+  #    delimB  chr   regex pattern for the begin-delimiter
+  #    delimE  chr   regex pattern for the end-delimiter
+  #    myExt  chr   extension of tempfile. Default ".R"
+  # Value:           None. Executed for its side-effect of writing
+  #                  text to tempfile() and opening it in the editor
+  #
+
+  # Parse out the ID
+  ID <- regmatches(URL, regexec("/d/([^/]+)/", URL))[[1]][2]
+
+  # make a retrieval URL
+  URL <- sprintf("https://docs.google.com/document/d/%s%s",
+                 ID,
+                 "/export?format=txt")
+
+  # GET() the data.
+  response <- httr::GET(URL)
+  if (! httr::status_code(response) == 200) {
+    stop(sprintf("Server status code was \"%s\".",
+                 as.character(httr::status_code(response))))
+  }
+
+  s <- as.character(response)
+  s <- strsplit(s, "\r\n")[[1]]   # split into lines, delimited with \r\n
+  iBegin <- grep(delimB, s)       # find the two delimiter indices
+  iEnd   <- grep(delimE, s)
+
+  # Sanity checks
+  if (length(iBegin) == 0) {
+    stop("Begin-delimiter was not found in document.")
+  } else if (length(iEnd) == 0) {
+    stop("End-delimiter was not found in document.")
+  } else if (length(iBegin) > 1) {
+    stop("More than one Begin-delimiter in document.")
+  } else if (length(iEnd) > 1) {
+    stop("More than one End-delimiter in document.")
+  } else if ((iEnd - iBegin) < 2) {
+    stop("Nothing delimited or delimiter tags not correctly ordered.")
+  }
+
+  s <- s[(iBegin+1):(iEnd-1)]          # extract delimited text
+
+  myFile <- tempfile(fileext = ".R")   # get name for temporary file
+  write(s, myFile)                     # write s into temporary file
+  file.edit(myFile)                    # open in editor
+
+  return(invisible(NULL))              # return nothing
+}
+
+if (FALSE) {
+  fetchGoogleDocRCode("https://docs.google.com/document/d/15qUO3WwKZSqK84gNj8XZIrCe6Ih791oFfGTJ82nuM_w/edit?usp=sharing")
+
+}
+
+
+
+# =    6  Reading Google sheets  ===============================================
 
 cat("  Defining read.gsheet() ...\n")
 
@@ -241,7 +312,7 @@ read.gsheet <- function(URL, sheet, ...) {
  # Y <- "AA styles"
  # Z <- read.gsheet(X, Y)
 
-# =    6  Plotting amino acids as 2D scatterplot  ==============================
+# =    7  Plotting amino acids as 2D scatterplot  ==============================
 
 cat("  Reading Google sheet AADAT ...\n")
 

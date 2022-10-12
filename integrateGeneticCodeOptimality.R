@@ -5,15 +5,15 @@
 #              and simulation in assessing the optimality of the genetic
 #              code.
 #
-# Version:  1.0
+# Version:  1.1
 #
 # Date:     2022-10
 # Author:   Boris Steipe (boris.steipe@utoronto.ca)
 #
 # Versions:
-#           0.1    First version during lecture.
+#           1.1    A few clarifying edits
 #           1.0    Finalized and posted.
-#
+#           0.1    First version during lecture.
 #
 #
 # TODO:
@@ -77,12 +77,17 @@
 #
 
 # =    2  First pass: lay out the workflow  ====================================
+
+
 # Pseudocode:
-#   Represent the universal genetic code (UGC) as a datastructure
+# -----------
+#   Represent the universal genetic code (UGC) as a data structure
 #   for N trials
 #     Construct a random genetic code (RGC)
-#     for all adjacent positions in the code
-#       - sum similarity values for the two amino acids that are encoded
+#     for all single point mutations ("adjacent codons")
+#       compute a similarity value for the two amino acids that are encoded
+#       add it to a total (smaller sums are more similar codes)
+#     store each sum
 #   Tabulate distribution of sums for all simulated RGC
 #   Report where the UGC fall on this distribution
 #
@@ -91,27 +96,43 @@
 # =    3  Second pass: functions and key datastructures  =======================
 #
 
-# Represent the universal genetic code (UGC) as a data frame:
+# Represent the universal genetic code (UGC) as a data structure
+# --------------------------------------------------------------
+#   use a data frame:
 #     one column for amino acids (one letter code), one column each for
 #     first, second, and third nucleobase
 #   - copy the genetic code from a repository (e.g. NCBI)
-#   - take e string of nucleotides or amino acids and strsplit() them
+#   - take a string of nucleotides or amino acids and strsplit() them
 #     into a vector of one letter elements
 #   - needs a function for that ... call it: str2vec()
-#   - add each vector into the dataframe
+#   - add each vector into the data frame
 # for N trials
+# ------------
 #   Construct a random genetic code (RGC)
+#   -------------------------------------
 #     - needs a function ... call it randCode()
-#   for all adjacent positions in the code
+#
+#   for all single point mutations ("adjacent codons")
+#   --------------------------------------------------
 #     - needs a function to enumerate all adjacent positions, and a smart
 #       datastructure that will make it easy to retrieve amino acid pairs
 #       call it mapAdjacent()
-#     - sum similarity values for the two amino acids that are encoded
+#     compute a similarity value for the two amino acids that are encoded
+#     -------------------------------------------------------------------
 #       - needs a function to calculate similarity values,
 #         call it calcSimilarity()
-# Tabulate distribution of summed similarity values
-# Compare to universal genetic code
+#       add it to a total (smaller sums are more similar codes)
+#       -------------------------------------------------------
 #
+#   store each sum
+#   --------------
+#
+# Tabulate distribution of sums for all simulated RGC
+# ---------------------------------------------------
+# Report where the UGC fall on this distribution
+# ----------------------------------------------
+#
+# Now implement the functions:
 
 # ==   3.1  str2vec()  =========================================================
 
@@ -132,6 +153,7 @@ str2vec(c("tweedledum",
 
 # Define the Universal Genetic Code
 #
+# Fetch the data from any public repository, e.g. the NCBI
 # Genetic code: https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi
 #
 # AAs    = FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG
@@ -159,9 +181,16 @@ rownames(uCode) <- uCode$codon   # this gives us a convenient way to retrieve
 # Verify:
 head(uCode)
 uCode["ATG", ]  # Methionine (M)
+uCode[uCode$AA == "H", "codon"]  # All Histidine (H) codons
 
 
 # ==   3.3  randCode()  ========================================================
+
+# Instead of a fully random code, we construct a code that preserves
+# redundancy, i.e. the redundant groups of codons are preserved,
+# but they are swapped to code for different amino acids and are
+# permuted to be represented elsewhere in the table.
+#
 
 randCode <- function(inCode, doSwap = TRUE, doPermute = TRUE) {
   # inCode:    data frame with one column called "AA"
@@ -175,7 +204,8 @@ randCode <- function(inCode, doSwap = TRUE, doPermute = TRUE) {
   #            directed.
   #
 
-  # randomly swap characters
+  # randomly swap characters. As a result: each amino acid is changed into
+  # a different one
   if (doSwap) {
     alphabet <- unique(inCode$AA)
     alphrand <- sample(alphabet)
@@ -185,29 +215,31 @@ randCode <- function(inCode, doSwap = TRUE, doPermute = TRUE) {
                         inCode$AA)
   }
 
-  # randomly shuffle translated codons
+  # randomly shuffle translated codons. As a result, each codon codes for
+  # a different amino acid than it did before
   if (doPermute) {
     inCode$AA <- sample(inCode$AA)
   }
-
 
   return(inCode)
 }
 
 # verify
-randCode(data.frame(AA = c("A", "B", "B", "C", "C", "C")),
+myTest <- data.frame(AA = c("x", "y", "y", "z", "z", "z"))
+set.seed(314159)
+
+randCode(myTest,
          doSwap = FALSE,
          doPermute = FALSE) # should return the same as the input
 
-randCode(data.frame(AA = c("A", "B", "B", "C", "C", "C")),
+randCode(myTest,
          doPermute = FALSE) # swap only: keeps the pattern x y y z z z
 
-randCode(data.frame(AA = c("A", "B", "B", "C", "C", "C")),
+randCode(myTest,
          doSwap = FALSE)    # permute only: positions shuffled but we still have
-                            # one A, two B and three C
-                            #
-randCode(data.frame(AA = c("A", "B", "B", "C", "C", "C")))
-                            # completely randomized positions and frequencies
+                            # one x, two y and three z
+
+randCode(myTest)# completely randomized positions and frequencies
 
 
 # ==   3.4  mapAdjacent()  =====================================================
@@ -227,16 +259,20 @@ mapAdjacent <- function(inCode) {
   # the diagonal (those are identical), and we only need to consider the
   # triangle above the diagonal, since the triangle below the diagonal
   # is symmetric to it.)
-  for (i in 1:(nrow(inCode) - 1)) { # for all rows
-    for(j in (i+1):nrow(inCode)) {
-       # print(sprintf("[%2d, %2d]", i, j)) # verify the correct range of the
-                                            # loop variables i, and j.
+  for (i in 1:(nrow(inCode) - 1)) { # for all rows i
+    for(j in (i+1):nrow(inCode)) {  # for all columns j that have an index
+                                    # greater than i
+       # print(sprintf("[%2d, %2d]", i, j)) # this line used only in
+                                            # development:verifies the correct
+                                            # range of the loop variables
+                                            # i and j. (Easy to make a mistake.)
 
        x <- inCode[i, c("B1", "B2", "B3")]  # extract two vectors with the three
        y <- inCode[j, c("B1", "B2", "B3")]  # nucleotides of rows i and j
 
        if ( sum(x != y) == 1) { # if x and y have exactly one difference...
-         # append the codon from row i column j to the output
+         # append the two codons from row i and column j to the output:
+         # these are two adjacent codons.
          adj <- rbind(adj, c(inCode$codon[i], inCode$codon[j]))
        }
     }
@@ -273,7 +309,7 @@ cor(myF$f2, myF$f3)
 
 # To avoid problems with different absolute values of our features, we use
 # scale() which centers the columns (each column's mean becomes 0) and scales
-# the valuse so that each vector's standard deviation is one. This type of
+# the values so that each vector's standard deviation is one. This type of
 # "normalization" is called "standardization". Scale can work on all columns
 # of a matrix-like object, like a data frame.
 

@@ -197,7 +197,7 @@ AACOLS <- gsub("$", "AA", AACOLS)  # Make the colors 33% transparent
 
 # =    5  Extracting R code from Google docs  ==================================
 
-cat("  fetchGoogleDocRCode ...\n")
+cat("  Defining fetchGoogleDocRCode ...\n")
 
 fetchGoogleDocRCode <- function (URL,
                                  delimB = "^# begin code",

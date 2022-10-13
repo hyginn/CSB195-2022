@@ -46,23 +46,30 @@ HGC(minEcode) # 2.246641
 # We see that the natural code has close to maximal entropy! Only 4%
 # less then the maximum. Remarkable.
 
-# How does the standard code compare to random codes?
-N <- 10000
-rndC <- numeric(N)
-alf <- unique(stdGC)
+# How does the standard code compare to random codes? Random codes for this
+# purpose are constructed by appending 43 random amino acids to the "alphabet"
+# of 21 amino acids. That way we gurantee that all amino acids are present,
+# and the code is 64 characters long. For calculating entropy, order does not
+# matter, it makes no difference that the first 21 characters are always the
+# same.
+#
+N <- 10000             # run N trials
+rndC <- numeric(N)     # prepare vector to store N results
+alf <- unique(stdGC)   # extract the alphabet from the stdCode
 for (i in 1:N) {
-  y <- c(alf, sample(alf, 43, replace = TRUE)) # 21 fixed and 43 random
-  rndC[i] <- HGC(y)
+  x <- c(alf, sample(alf, 43, replace = TRUE)) # concatenate 21 fixed and
+                                               # 43 random characters
+  rndC[i] <- HGC(x)    # store the entropy
 }
 
 hist(rndC,
-     breaks = 30,
+     breaks = 100,
      xlim = c(4.0, 4.4),
      main = "Shannon entropy of random genetic codes",
      xlab = "H (bits)")
 abline(v = HGC(stdGC), col = "#BB0000")       # standard code
 abline(v = c(HGC(minEcode),
-             HGC(maxEcode)), col = "#00DD00") # max and min entropy codes
+             HGC(maxEcode)), col = "#00DD00") # max- and min-entropy codes
 
 # Here we see that the standard code is virtually indistinguishable from random.
 

@@ -1,0 +1,1 @@
+javascript:(function(){var url=window.location.href;var re=/\/([\w.]+)\/(.*$)/;var match=url.match(re);var newURL="http://"+match[1]+".myaccess.library.utoronto.ca/"+match[2];window.location.href=newURL;})();void 0

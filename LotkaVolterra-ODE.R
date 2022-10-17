@@ -2,10 +2,13 @@
 #
 # Purpose:  Demonstrate the Lotka-Volterra equation as an ODE.
 #
-# Version:  1.0
+# Version:  2.0
 # Date:     2022-10-12
 # Author:   Boris Steipe (boris.steipe@utoronto.ca)
 #
+# Versions:
+#           2.0  Add manual iteration code
+#           1.0  First demo in tutorial
 #
 # ToDo:
 #

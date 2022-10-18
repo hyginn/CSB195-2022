@@ -25,7 +25,7 @@ HGC <- function(GC) {
   if (length(GC)         != 64) {stop("Input does not have 64 codons.")}
   if (length(unique(GC)) != 21) {stop("Input does not have 21 amino acids.")}
 
-  # convert to PMF  (Probability Mas Function). Sum is 1.0.
+  # convert to PMF  (Probability Mass Function). Sum is 1.0.
   V <- table(GC) / 64
   # compute entropy base 2
   H <- -sum(V * (log(V) / log(2)))

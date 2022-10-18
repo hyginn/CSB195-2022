@@ -6,11 +6,8 @@ cat("\nHello - welcome to the CSB195-2022 class project.\n\n")
 
 cat("Sourcing utility scripts ...\n")
 source(".util.R")
-
 if (file.exists("../dev/initDev.R")) { source("../dev/initDev.R") }
-
-cat("\nDone.\n")
-
+cat("\nInitializations complete.\n")
 
 
 # [END]

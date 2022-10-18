@@ -12,7 +12,7 @@
 
 
 #TOC> ==========================================================================
-#TOC> 
+#TOC>
 #TOC>   Section  Title                                           Line
 #TOC> ---------------------------------------------------------------
 #TOC>   1        Remote control of ChimeraX                        29
@@ -22,7 +22,7 @@
 #TOC>   5        Extracting R code from Google docs               198
 #TOC>   6        Reading Google sheets                            268
 #TOC>   7        Plotting amino acids as 2D scatterplot           315
-#TOC> 
+#TOC>
 #TOC> ==========================================================================
 
 
@@ -312,6 +312,7 @@ read.gsheet <- function(URL, sheet, ...) {
  # Y <- "AA styles"
  # Z <- read.gsheet(X, Y)
 
+
 # =    7  Plotting amino acids as 2D scatterplot  ==============================
 
 cat("  Reading Google sheet AADAT ...\n")
@@ -370,5 +371,17 @@ plotAA <- function(x, y, aaDat = AADAT, ...) {
 # y <- aaindex[[544]]$I
 # plotAA(x, y)
 
-cat("Done.\n")
+
+# =    7  Plotting amino acids as 2D scatterplot  ==============================
+
+cat("  Adding docstring:: function ...\n")
+
+if (! requireNamespace("docstring", quietly = TRUE)) {
+  install.packages("docstring")
+}
+
+`?` <- docstring::`?`
+
+cat("... Done.\n")
+
 # [END]

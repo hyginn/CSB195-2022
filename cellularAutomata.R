@@ -2,361 +2,423 @@
 #
 # Demo code for CSB195-2022
 #
-# 2022-10-12
+# 2022-10-30
 # Boris Steipe (boris.steipe@utoronto.ca)
 #
-# Version:  1.1
+# Version:  1.2
 #
 # Versions:
-#           1.1   Updates after demo in course
+#           1.2   Move most code out ... teaching the code is not a critical
+#                   objective here. Convert to "interactive" textbook" paradigm.
+#           1.1   Updates after demo in course. More extensive explorations.
 #           1.0   First course version
 #
 #  To Do:
+#    Colour patterns (e.g. Gliders)
+#    Fade out background ether pattern
+#
+#  References:
+#   Cook, Matthew (2004) Universality in Elementary Cellular Automata.
+#        Complex Systems  15:1-40
+#        https://wpmedia.wolfram.com/uploads/sites/13/2018/02/15-1-1.pdf
+#
+#    Wikipedia (2022) Cellular Automaton.
+#        https://en.wikipedia.org/wiki/Cellular_automaton
+#
+#    Wikipedia (2022) Rule 110.
+#        https://en.wikipedia.org/wiki/Rule_110
+#
+#    Wolfram, Stephen (1984) Universality and Complexity in Cellular Automata.
+#        Physica  10D: 1-35
+#        https://doi.org/10.1016/0167-2789(84)90245-8
+#
 #
 #
 # ==============================================================================
 
 
 #TOC> ==========================================================================
-#TOC> 
-#TOC>   Section  Title                 Line
-#TOC> -------------------------------------
-#TOC>   1        INTRODUCTION            35
-#TOC>   2        FUNCTIONS               45
-#TOC>   2.1        showRule()            55
-#TOC>   2.2        applyRule()           93
-#TOC>   2.3        CA()                 115
-#TOC>   3        FIRST STEPS            215
-#TOC>   4        EXPLORATIONS           252
-#TOC> 
+#TOC>
+#TOC>   Section  Title                                                  Line
+#TOC> ----------------------------------------------------------------------
+#TOC>   1        INTRODUCTION                                             58
+#TOC>   2        FUNCTIONS                                                72
+#TOC>   3        FIRST STEPS                                             102
+#TOC>   4        EXPLORATIONS                                            164
+#TOC>   4.1        First exploration. Step through the rules ...         167
+#TOC>   4.2        Digression: Fibonacci words                           235
+#TOC>   4.3        Four classes                                          264
+#TOC>   4.3.1          Digression: initializations                       288
+#TOC>   5        EVERY SINGLE CA                                         318
+#TOC>   6        LONG EVOLUTIONS                                         340
+#TOC>
 #TOC> ==========================================================================
 
 
 # =    1  INTRODUCTION  ========================================================
-#
 
+# When we were looking at coupled differential equations, our models represented
+# systems that respond in a varied but specific way to the state of their
+# environment. The models we introduce here however are able to **sense** the
+# environment and make decisions, they perform - in the simplest, most
+# fundamental way - information processing. The simplest such model consists of
+# a single "cell" in a one-dimensional world, which can sense the state of its
+# left and right neighbour, and then decide how its own state will change
+# according to a compact set of rules.
 
-# The required functions are defined below, you are welcome to look at them in
-# detail, but there is a lot of bookkeeping going on which may obscure that they
-# are really very simple. Just be sure to understand what they do in principle.
-# You can always use the help-function to recall the meaning of the parameters
-# and the function details.
+# Such systems are called "Cellular Automata" (CA).
+
 
 # =    2  FUNCTIONS  ===========================================================
 #
 
-# These function are sourced from outside this script because they are needed in
-# other scripts later on.
-
-source("imPlot.R")  # plot the contents of a matrix
-source("fibWord.R") # compute a Fibonacci word as initialization vector
-
-
-# ==   2.1  showRule()  ========================================================
-
-showRule <- function(R) {
-  #' @title showRule()
-  #' @description Print out the rule-set for Wolfram code R
-  #' @param R  int.  The Wolfram code for a 1D cellular automaton rule-set;
-  #'                 an integer in [0, 255].
-  #'
-  #' @return   int.  The rule set as a named integer vector. The rule set is
-  #'                 printed as a side-effect.
-  #'
-  #' @details `showRule()` prints out the construction of a cellular automaton
-  #'          rule-set computed from its Wolfram code. This code is derived from
-  #'          the state-configurations of a cell's neighborhood, ordered in
-  #'          descending order - in our 1D case: [111][110][101]...[000].
-  #'          Each of the eight configurations can be seen as a digit in
-  #'          an eight-digit binary number, and thus each of the 255 numbers
-  #'          specifies a unique rule set.
-  #'
-  #' @examples   showRule(18)
-  #'             myR <- showRule(110)
-  #'             myR["010"]
-  if (R < 0 || R > 255) {
-    stop("R is not in [0,255].")
-  }
-
-  v <- as.integer(intToBits(R)[8:1] == "01")  # convert integer to binary array
-  names(v) <- c("111", "110", "101", "100", "011", "010", "001", "000")
-
-  cat(sprintf("\n  Rule: %d\n  %s\n   %s  ",
-              R,
-              paste(names(v), collapse = " "),
-              paste0(v, collapse = "   ")))
-
-  return(invisible(v))
-}
+# The key functions we need here are in the source()d files below. You are
+# welcome to look at them in detail, but there is a lot of bookkeeping going on
+# which may obscure that they are really very simple. Just be sure to understand
+# what they do in principle. I have added documentation to the functions so can
+# always use the help-function to recall the meaning of the parameters: just
+# type ?<function name>. And where you find a function call of the form
+# plotFigure() below, code that creates the "figures" for this script, you can
+# view the source by calling the function with the parameter "showSource" in
+# the arguments. e.g. plotFigure("CA.1", showSource)
 
 
-# ==   2.2  applyRule()  =======================================================
+source("plotFigure.R")      # plot the contents of a matrix
+# == plotFigure()       === compute and plot a figure
+# == catSection()       === optionally cat() the script source
 
-applyRule <- function(R, s) {
-  #' @title applyRule()
-  #' @description The new state of a cellular automaton is computed by
-  #' applying the Wolfram code rule-set R to the neighbourhood state s.
-  #'
-  #' @param  R   int. The Wolfram code for a 1D cellular automaton
-  #'                      rule set; an integer in [0, 255].
-  #' @param  s   int. A binary vector of length three.
-  #' @return      0 or 1
-  #' @examples
-  #'   applyRule(110,  c(1, 0, 1))
-  #'   applyRule( 30, c(1, 0, 0))
+source("imPlot.R")          # plot the contents of a matrix
+# == imPlot()           === plots a raster image
+# == imText()           === adds text to a raster image
 
-  v <- as.integer(intToBits(R)[8:1] == "01")  # convert integer to binary array
-  idx <-  8 - (s[1]*4) - (s[2]*2) - (s[3]*1)  # compute index of v from s
+source("CAtools.R")         # sundry utilities to work with cellular automata
+# == showRule()         === prints the rule set of a cellular automaton
+# == plotRule()         === plots a graphic of a cellular automaton's rule set
+# == applyRule()        === applies a rule to three input elements
+# == CA()               === run a cellular automaton
 
-  return(v[idx])
-}
+source("fibWord.R")         # compute a Fibonacci word
+# == fibWord()          === a non-repeating string of 1s and 0s
 
-
-# ==   2.3  CA()  ==============================================================
-
-CA <- function(R, nx = 100, ny = 100, vInit, wrap = TRUE, N = NULL) {
-  #' @title CA()
-  #' @description Evolve a cellular automaton with Wolfram code R in a nx * ny
-  #' matrix.
-  #'
-  #' @param  R   int. The Wolfram code for a 1D cellular automaton
-  #'                      rule set; an integer in [0, 255].
-  #' @param  nx  the width of the space in which the automaton evolves
-  #' @param  ny  the number of steps to compute
-  #' @param  vInit   the initialization vector. See details.
-  #' @param  wrap    if TRUE, wrap the vertical edges of the matrix (periodic
-  #' boundary).
-  #' @param  N    If this is not NULL, the function plots every updated row
-  #' until the matrix is filled, then scrolls the matrix for a total of N steps
-  #' (or until the process is aborted.).
-  #' @return      the evolved matrix as 0s and 1s.
-  #' @details If vInit is missing, a single 1 is placed at the centre of the
-  #' first row. If vInit is in [0, 1] the vector is filled with random 1s of
-  #' p == vInit. If vInit is > 1, round(vInit) 1s are equally spaced into
-  #' vInit. If vInit is the keyword "fib", the first row is initialized with
-  #' a Fibonacci word. If length(vInit) > 1 the vector is recycled into the
-  #' length of vInit. In particular, this allows to pass in a custom
-  #' initialization vector of length nx.
-  #' @examples
-  #'
-
-  if (missing(vInit)) { # place a single 1 in the middle
-    vInit <- integer(nx)
-    vInit[round((nx) / 2)] <- 1
-  } else if (length(vInit) > 1){  # recycle this vector
-    vInit <- rep(vInit, ceiling(nx/length(vInit)))[1:nx]
-  } else if (is.numeric(vInit) && vInit >= 0 && vInit <= 1) { # probability
-    vInit <- sample(0:1, nx, replace= TRUE, prob = c(1-vInit, vInit))
-  } else if (is.numeric(vInit) && vInit > 1) { # place 1s
-    idx <- round(seq(1, nx, length.out = round(vInit)))
-    vInit <- integer(nx)
-    vInit[idx] <- 1
-  } else if (vInit == "fib") { # Fibonacci word
-    vInit <- as.integer(unlist(strsplit(fibWord(nx), "")))
-  } else {
-    stop("PANIC: I don't know what to do with this vInit.")
-  }
-
-  if (is.null(N)) {  # No plotting of progress
-    N <- 0
-  } else {
-    Nmax <- N
-    cat("\n")
-  }
-
-  stopifnot(nx == length(vInit))
-
-  m <- matrix(integer(nx * ny), ncol = nx)
-  m[1, ] <- vInit
-
-  if (wrap) {
-    m <- cbind(m[ ,nx], m, m[ ,1]) # wrap first and last column
-    nx <- nx + 2                  # increase nx accordingly
-  }
-
-
-  for (i in 1:(ny-1)) {
-    for (j in 2:(nx-1)) {
-      m[(i+1), j] <- applyRule(R, m[i, (j-1):(j+1)])
-    }
-    if (wrap) {
-      m[i+1, 1] <- m[i+1, j]     # wrap last cell to beginning
-      m[i+1, nx] <- m[i+1, 2]    # wrap first cell to end
-    }
-    if (N > 0) {
-      imPlot(m)
-      dev.flush()
-      N <- N-1
-      cat(sprintf("\rStep %d", Nmax - N))
-    }
-  }
-
-  for (k in seq_len(N)) { # scroll if N is > 0
-    m[1:(ny-1), ] <- m[2:ny, ] # shift the matrix one row up
-    for (j in 2:(nx-1)) {
-      m[(i+1), j] <- applyRule(R, m[i, (j-1):(j+1)])
-    }
-    m[i+1, 1] <- m[i+1, nx-1]  # wrap last cell to beginning
-    m[i+1, nx] <- m[i+1, 2]    # wrap first cell to end
-    imPlot(m)
-    dev.flush()
-    cat(sprintf("\rStep %d", Nmax - (N - k)))
-
-  }
-
-  if (wrap) {
-    m <- m[ , -c(1, nx)] # remove wrapped columns
-  }
-
-  return(m)
-}
 
 
 # =    3  FIRST STEPS  =========================================================
 #
 
-# Let's evolve a few cellular automata.
+# A cell that senses its own state and that of its two neighbors, given that
+# the states can be 0 or 1, has a state-space of eight possibilities:
 
-nx <- 11  # width
-ny <- 9   # height
-m <- matrix(integer(nx * ny), nrow = ny)  # integer() fills the matrix with 0s
+plotFigure("CA.1")
 
-m[1,6] <- 1  # Initialize the first row
+# The "Wolfram code" associates with each of the eight 0s or 1s a zero or one.
+# Consider, for example, Rule 18.
+showRule(18)
+plotFigure("CA.2")
 
-mTest <- m  # save this so we can eaily recreate it.
+# This means: if a cell is in state 0, and its LEFT neighbour is "1", then it
+# switches to state 1. And if a cell is in state 0, and its RIGHT neighbour is
+# "1", then it also switches to state 1. But for all other states, it either
+# switches to or remains in state 0.
 
-image(m)                                  # R's basic plotting function image()
+# Note that the output states are the binary digits:
+#
+#    0  0  0  1  0  0  1  0
+#
+# Each binary digit stands for one of the powers of 2 from left to right these
+# are zero to seven:
 
-plot(c(1, nx), c(1,ny), type = "n")       # R's plotting function rasterImage()
-rasterImage(m, 1, 1, nx, ny, interpolate = FALSE)
+print( 2^(7:0) )
 
-imPlot(m, drawGrid = TRUE)                # Our own imPlot()
+# So the binary digits \0b 00010010 are converted to decimal digits by
+# computing: 0*128 + 0*64 + 0*32 + 1*16 + 0*8 + 0*4 + 1*2 + 0*1 or ...
+#    16 + 2, which is 18. This means the Wolfram code is "self-describing"!
+# A code number contains the instruction set for its application.
 
-# Now look at the cells row by row and evolve a CA. The readlines() function
-# pauses every row and waits for your input. Just hit <return>  in the
-# console.
+# When we say a CA "evolves", we mean that the CA iterates a 1D input "world"
+# through a number of applications of its transformation rules:
 
-R <- 213         # Wofram Code 18
-showRule(R)
-for (i in 1:(ny-1)) {
-  for (j in 2:(nx-1)) {
-    m[(i+1), j] <- applyRule(R, m[i, (j-1):(j+1)])
-  }
-  imPlot(m, drawGrid = TRUE)
-  readline("Hit <Return> for next row >")
-}
+plotFigure("CA.3")
 
-m <- mStart # Reset m and try a different rule - perhaps 213 ...
+# Note that this process is undefined at the edges. We could aways pad the edges
+# with 0, or we could "wrap the edges around" ... the right-most neighbour of
+# the last cell is the first cell, and the left-most neighbour of the first cell
+# is the last cell. If you imagine evolving the CA on a piece of graphing paper,
+# this is like turning  the paper into a cylinder by gluing the edges together.
+# What goes out on the right comes back in on the left. We also call this
+# "periodic boundary conditions".
+
+plotFigure("CA.4")
+
+# Let's evolve a few cellular automata. We start from a single point in the
+# middle and apply a given rule step by step. After every line we pause;
+# hit <return> in the console to advance one more iteration, or hit <esc> to
+# stop.
+
+plotFigure("CA.5", rule = 18)
+
+# Try a different rule: Rule 2  - do you see how this works?
+
+plotFigure("CA.5", rule = 2)
+
+# Can you make it go in the other direction ?
+
+plotFigure("CA.5", rule = 16)
+
+# To look for interesting rules, we should consider a larger matrix ...
 
 
 # =    4  EXPLORATIONS  ========================================================
-#
-
-# == First exploration.
-# Set i to a particular value. Select the entire if()
-# statement. When you hit <cmd>-<return>, i is incremented by one, and
-# the CA is run. You can step through the different rules one-by-one simply by
-# hitting <cmd>-<return> again and again.
-i <- 0
-if ((i <- i+1)) {
-  m <- CA(i, nx = 150, ny=300)
-  imPlot(m, drawGrid = FALSE)
-  showRule(i)
-}
 
 
+# ==   4.1  First exploration. Step through the rules ...  =====================
 
-# == Second exploration.
-# Look at the effect of varying initializations.
+# It is tedious to enter the rule number by hand. We can apply a little trick:
+# if we assign a value inside parentheses, the result of the assignment is
+# available outside parentheses. We can use this to increment a number step by
+# step. Note what gets printed:
 
-R <- 18
-showRule(R)
+(i <- 0)       # 0
+(i <- i + 1)   # 1
+(i <- i + 1)   # 2
+(i <- i + 1)   # 3
 
-# A single starting cell
-m <- CA(R, nx = 200, ny=400); imPlot(m, drawGrid = FALSE)
+# ... etc.
 
-# Three starting cells
-m <- CA(R, nx = 200, ny=400, vInit = 3); imPlot(m, drawGrid = FALSE)
+# We can use the same syntax to plot CAs one after another:
 
-# Seven starting cells
-m <- CA(R, nx = 200, ny=400, vInit = 7); imPlot(m, drawGrid = FALSE)
+iRule <- 0
 
-# random 1s with p == 0.33
-m <- CA(R, nx = 200, ny=400, vInit = 0.33); imPlot(m, drawGrid = FALSE)
+# Select the entire funcxtion call below.  When you hit <cmd>-<return>, iRule is
+# incremented by one, and the evolution of the CA is displayed. You can step
+# through the different rules, simply by hitting <cmd>-<return> again and again.
+# (You can also change the parameters ...)
 
-# random 1s with p == 0.67
-m <- CA(R, nx = 200, ny=400, vInit = 0.67); imPlot(m, drawGrid = FALSE)
+plotFigure("CA.6", iRule = (iRule <- iRule + 1),
+           nx = 50, ny = 71, drawGrid = TRUE)
 
-# repeating a vector
-v <- c(rep(0, 13), rep(1, 13), rep(0, 21), rep(1, 21))
-m <- CA(R, nx = 200, ny=400, vInit = v); imPlot(m, drawGrid = FALSE)
+# You will quickly notice that the behaviour of our CAs can be **very**
+# different. Rules 0 and 8 do nothing. (Why?) Rules such as 2, 13, 23, 24, and
+# 50 show very simple behaviour. Rules 18, 22, and 26 evolve fractals...
+
+plotFigure("CA.6", iRule = 26, nx = 300, ny = 500)
+
+# And rules like 30, and 45? They develop into some disordered state from which
+# no order seems to be recoverable.
+
+plotFigure("CA.6", iRule = 45, nx = 300, ny = 500)
+plotFigure("CA.6", iRule = 86, nx = 300, ny = 500)
+
+# ... and then there is rule 110 - which appears to sit somewhere between order
+# and disorder:
+
+plotFigure("CA.6", iRule = 110, nx = 300, ny = 500)
+
+# Stephen Wolfram surmised in 1984 that CAs would fall into four different
+# classes, depending on their long-term behaviour. And interestingly, these
+# classes are related to ideas we have already encountered with our
+# Lotka-Volterra equations.
+
+# Class I CAs    converge from almost any initial state to a single point
+#                in state-space. Rules 4, 8, 36 ... are examples.
+
+# Class II CAs:  enter into some periodic behavior over long time, similar to
+#                the phase-space cycles we had observed in Lotka-Volterra
+#                systems.  Rules 1, 23, 25, 26, 27, (and the non-trivial 45)
+#                are examples.
+
+# Class III CAs: exhibit aperiodic, or "chaotic" behavior over time. Like the
+#                Lotka-Volterra systems with 3 coupled equations, they may
+#                appear similar at various times in their trajectory,
+#                but they are never exactly the same. Frequently, these have
+#                a fractal geometry.  Rules 18, 60, 75, 86 and 105 are striking
+#                examples.
+
+# Class IV CAs:  are undecidable. The quintessential example is the
+#                famous rule 110.
+
+# Try some of these by setting the parameter iRule
+# to their respective value, for example:
+
+plotFigure("CA.6", iRule = 193, nx=300, ny=500)  # Have you seen this before?
+
+
+# ==   4.2  Digression: Fibonacci words  =======================================
+
+# To illustrate these CAs, we'll not start with a random initial state, but with
+# a "Fibonacci Word" - a binary sequence that has locally similar regions but
+# that never repeats This sequence is related to the famous Fibonacci sequence
+# ...
+
+# 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89 ...                    (OEIS A000045)
+
+# ... i.e. each term is the sum of its two predecessors. The sequence has
+# many, many beautiful and fascinating properties, e.g. the ratio of two terms
+# approximates the golden ratio, (1 + sqrt(5)) / 2 , as the terms grow larger,
+# and Fibonacci numbers come up frequently in the geometry of living systems.
+# But that's an exploration for another day. Here we use the binary Fibonacci
+# sequence:
+
+fibWord()
+
+# We can see its non-repeating property nicely when we "fold" the sequence
+# along one of the Fibonacci numbers:
+
+plotFigure("CA.7", i = 55, j = 34)
+
+# The sequence arranges into columns, more or less, but it is not exactly
+# repetitive, there are always locations where it shifts. This is useful for us,
+# since it reduces the artefacts of evolving CAs that are introduced
+# by wrapping our space and creating a periodic boundary.
+
+
+# ==   4.3  Four classes  ======================================================
+
+# Here we plot only one of the four classes each ...
+
+# Class 1
+plotFigure("CA.8", iRule = 36,
+           nx = 233, ny = 233, vInit = "fib")
+
+# Class 2
+plotFigure("CA.8", iRule = 45,
+           nx = 233, ny = 233, vInit = "fib")
+
+# Class 3
+plotFigure("CA.8", iRule = 86,
+           nx = 233, ny = 233, vInit = "fib")
+plotFigure("CA.8", iRule = 105,
+           nx = 233, ny = 233, vInit = "fib")
+# (That's two examples - hard to resist.)
+
+# Class 4
+plotFigure("CA.8", iRule = 110,
+           nx = 233, ny = 233, vInit = "fib")
+
+
+# ===   4.3.1  Digression: initializations
+
+# Nb. the code I wrote for this exploration can generate a number of different
+# initializations:
+
+# a single cell ...
+plotFigure("CA.8", iRule=110, nx=233, ny=233, vInit = 1   )
+
+# several isolated cells ...
+plotFigure("CA.8", iRule=110, nx=233, ny=233, vInit = 3   )
+
+# a repeated vector
+plotFigure("CA.8", iRule=110, nx=233, ny=233, vInit = c(0,0,0,0,1,1,1,1)   )
+
+# a repeated vector, but created from a string
+plotFigure("CA.8", iRule=110, nx=233, ny=233, vInit = c("01001110000011111111"))
+
+# random
+plotFigure("CA.8", iRule=110, nx=233, ny=233, vInit = 0.5)
+
+# random with p(0) != p(1)
+plotFigure("CA.8", iRule=110, nx=233, ny=233, vInit = 0.1)
+plotFigure("CA.8", iRule=110, nx=233, ny=233, vInit = 0.9)
 
 # Fibonacci word
-m <- CA(R, nx = 200, ny=400, vInit = "fib"); imPlot(m, drawGrid = FALSE)
+plotFigure("CA.8", iRule=110, nx=233, ny=233, vInit = "fib")
+
+# You are invited to explore varying sizes and initializations with the samples
+# of evolving CAs we discuss below.
 
 
+# =    5  EVERY SINGLE CA  =====================================================
 
-# == Third exploration.
-# Look at every CA.
+# Let's look at all of the CA's to get a sense of what the space of
+# possibilities looks like. We can plot all CAs from a loop.
 
 # This is a loop that plots A LOT. The default plot window doesn't like to be
-# updated so frequently. It "buffers" output untiul the process ends. I am sure
-# this has a use-case - and perhaps it makes the display more responsive in some
-# cases, but for what we are doing here, it breaks the process. That's bad.
+# updated so frequently. It "buffers" output until the process ends. I am sure
+# there is a sane reason for this, but for what we are doing here, it breaks the
+# process. That's bad.
 
-# So we'll open a new graphics window. This is reasonable responsive on the Mac,
-# but I don't know how well it works on Windows. Let me know.
+# Therefore we will open an external graphics window. This is reasonably
+# responsive on the Mac, but I don't know how well it works on Windows. Let me
+# know. After each plot we sleep for a second or so (you can adjust that) and you can
+# interrupt the cycle by pressing the red STOP-sign.
+
 dev.new()
 
-myCols <- sample(hcl.colors(256, "Temps"))  # random colors
+plotFigure("CA.9", start=0, end=255, sleep=1.0, nx=377, ny=610, vInit = "fib")
 
-# Also, there is a problem with keeping a little pause here. We would like to be
-# able to abort the loop by pressing the stop-sign. However if we use
-# Sys.sleep() while running a CPU-intensive process, our interrupts get lost.
-# Here is a safe alternative. (It's not really important though ... just ignore
-# if you find this confusing..):
-
-safeSleep <- function(tSleep) {
-  # alternative to Sys.sleep().
-  # cf. https://stackoverflow.com/questions/1174799/how-to-make-execution-pause-sleep-wait-for-x-seconds-in-r
-  then <-Sys.time()
-  while((as.numeric(Sys.time()) - as.numeric(then)) < tSleep){} #dummy while loop
-}
+dev.off()
 
 
+# =    6  LONG EVOLUTIONS  =====================================================
 
-# I'll run this here with "fib" initialization but you can choose any of the
-# other modes ...
+# We may be interested to let the evolution run for a longer time to see whether
+# the CA ultimately settles into a repeating state. Here is a scrolling
+# evolution:
 
-# ... and just so that we'll not be looking at the same rules again and again,
-# lets count down from 255.
+dev.new() # open a fresh plot window
 
-for (i in 255:0) {
-  m <- CA(i, nx=300, ny=600, vInit = sample(0:1, 300, replace = TRUE))
-  showRule(i)
-  cat("\n--------------------------------------\n")
-  imPlot(m, colMap = c("0" = "#f3f3f3", "1"=myCols[i+1]))
-  safeSleep(0.5)  # short pause
-}
+# ... then evolve CA 165 over 4000 steps
+plotFigure("CA.10", iRule=165, nx=377, ny=610, vInit="fib", nSteps = 4000)
 
-# == Fourth exploration:
+# Here too, you should be able to interrupt the scrolling by pressing the red
+# STOP-sign.
+#
+# Does this CA ultimately stabilize? Does the chaotic evolution remain chaotic?
 
-# Scrolling the CA. We may be interested in letingt this run for a long time, to
-# see whether the CA ultimately settles into a repeating state. I added a
-# scrolling mechanism to the CA function ...
+# I find this particular evolution intriguing for two reasons:
+#
+# (1) the rule is symmetric ...
 
-dev.off() # remove the alternative device ...
-dev.new() # and make a fresh one.
+showRule(165)
 
-# Try this ...
+# ... and although many local axes of symmetry arise, there is one major axis at
+# ~ 0.25 nx that remains unperturbed throughout the entire evolution. Indeed, if
+# you look closely, you will find that there is a second global axis of symmetry
+# that is wrapped around, where you would expect it ... at ~0.75 nx. Which is
+# remarkable since nx (=377) is an odd number! If we run this with nx = 378 the
+# axis shifts to the center, and the overall feeling is very different. Over
+# time, it feels like the character of the evolution is slowly changing towards
+# smaller and smaller features... until the large triangles reappear!
 
-m <- CA(18, nx=200, ny=400, vInit =7, N = 4000)
+plotFigure("CA.10", iRule=165, nx=378, ny=610, vInit="fib", nSteps = 4000)
 
-# Remember: you can hit the red "Stop Sign" to stop the scrolling process.
+# ... (2) it does not get boring.
 
-# So. Have fun exploring. And note down if you find anything remarkable, or if
-# you think this code doesn't support something you would like to try.
+# How about this one ...
+plotFigure("CA.10", iRule=165, nx=64*8, ny=300, vInit="fib", nSteps = 300)
+# Wait for it ...
+
+# There is much to be explored. For this course, we are pursuing this in a
+# rather qualitative fashion; I would be happy if you can develop something
+# of an intuition what is and what is not possible with these simple automata,
+# and get a feel for what "the edge of chaos" looks like.
+
+# Of course, rule 110 is particularly intriguinging because of its
+# undecidability: will it evolve into a trivial, locally repetitive state? Will
+# it remain chaotic? Will it attain some large-scale ordered structure? Here is
+# a nice example:
+
+plotFigure("CA.10", iRule=110,
+           nx=98, ny=294,
+           vInit=0.5,seed=2748,
+           nSteps=2000)
+
+# This evolution of CA 110 starts off from a jumbled array of triangles, formed
+# and vanishing without order or purpose. Soon a crystalline background ether
+# congeals from the tempest, it harbours thicker and thinner slanted fibrils
+# that manifest, then interact, then annihilate each other. A much larger
+# triangle appears unexpectedly, a singular occurrence, soon fading from view as
+# a distinct vertical track of cells runs down the middle for a hundred fifty
+# steps maybe. It too soon ceases to be when after some five hundred steps the
+# patterns converge on two doubled, repetitive disturbances. The CA has reached
+# its final state as those two self-sustaining perturbations spawn and
+# annihilate dotted feathers locally, with a periodicity of 30 steps, and
+# forever continue on their path through their world - side-by-side, yet
+# oblivious of each other. 30-step cycles arise - from the behaviour of cells
+# whose horizon is not more than three cells across.
+
+# And sometimes (e.g. seed = 72) they go on, and on - and die.
 
 
+dev.off()
 
 # [END]

@@ -38,20 +38,20 @@
 
 
 #TOC> ==========================================================================
-#TOC>
+#TOC> 
 #TOC>   Section  Title                                                  Line
 #TOC> ----------------------------------------------------------------------
 #TOC>   1        INTRODUCTION                                             58
 #TOC>   2        FUNCTIONS                                                72
-#TOC>   3        FIRST STEPS                                             102
-#TOC>   4        EXPLORATIONS                                            164
-#TOC>   4.1        First exploration. Step through the rules ...         167
-#TOC>   4.2        Digression: Fibonacci words                           235
-#TOC>   4.3        Four classes                                          264
-#TOC>   4.3.1          Digression: initializations                       288
-#TOC>   5        EVERY SINGLE CA                                         318
-#TOC>   6        LONG EVOLUTIONS                                         340
-#TOC>
+#TOC>   3        FIRST STEPS                                             105
+#TOC>   4        EXPLORATIONS                                            170
+#TOC>   4.1        First exploration. Step through the rules ...         173
+#TOC>   4.2        Digression: Fibonacci words                           252
+#TOC>   4.3        Four classes                                          281
+#TOC>   4.3.1          Digression: initializations                       306
+#TOC>   5        EVERY SINGLE CA                                         337
+#TOC>   6        LONG EVOLUTIONS                                         359
+#TOC> 
 #TOC> ==========================================================================
 
 
@@ -78,8 +78,8 @@
 # what they do in principle. I have added documentation to the functions so can
 # always use the help-function to recall the meaning of the parameters: just
 # type ?<function name>. And where you find a function call of the form
-# plotFigure() below, code that creates the "figures" for this script, you can
-# view the source by calling the function with the parameter "showSource" in
+# plotFigure() below, for code that creates the "figures" for this script, you
+# can view the source by calling the function with the parameter "showSource" in
 # the arguments. e.g. plotFigure("CA.1", showSource)
 
 
@@ -139,13 +139,13 @@ print( 2^(7:0) )
 
 plotFigure("CA.3")
 
-# Note that this process is undefined at the edges. We could aways pad the edges
-# with 0, or we could "wrap the edges around" ... the right-most neighbour of
-# the last cell is the first cell, and the left-most neighbour of the first cell
-# is the last cell. If you imagine evolving the CA on a piece of graphing paper,
-# this is like turning  the paper into a cylinder by gluing the edges together.
-# What goes out on the right comes back in on the left. We also call this
-# "periodic boundary conditions".
+# Note that this process is undefined at the edges. We could always pad the
+# edges with 0, or we could "wrap the edges around" ... the right-most neighbour
+# of the last cell is the first cell, and the left-most neighbour of the first
+# cell is the last cell. If you imagine evolving the CA on a piece of graphing
+# paper, this is like turning  the paper into a cylinder by gluing the edges
+# together. What goes out on the right comes back in on the left. We also call
+# this "periodic boundary conditions".
 
 plotFigure("CA.4")
 
@@ -174,8 +174,8 @@ plotFigure("CA.5", rule = 16)
 
 # It is tedious to enter the rule number by hand. We can apply a little trick:
 # if we assign a value inside parentheses, the result of the assignment is
-# available outside parentheses. We can use this to increment a number step by
-# step. Note what gets printed:
+# available outside the parentheses. We can use this to increment a number, step
+# by step. Note what gets printed:
 
 (i <- 0)       # 0
 (i <- i + 1)   # 1
@@ -221,23 +221,30 @@ plotFigure("CA.6", iRule = 110, nx = 300, ny = 500)
 # Class I CAs    converge from almost any initial state to a single point
 #                in state-space. Rules 4, 8, 36 ... are examples.
 
+plotFigure("CA.6", iRule = 4, nx = 300, ny = 500)
+
 # Class II CAs:  enter into some periodic behavior over long time, similar to
 #                the phase-space cycles we had observed in Lotka-Volterra
-#                systems.  Rules 1, 23, 25, 26, 27, (and the non-trivial 45)
-#                are examples.
+#                systems.  Rules 1, 23, 25, 26, and 27 are examples.
+
+plotFigure("CA.6", iRule = 1, nx = 300, ny = 500)
 
 # Class III CAs: exhibit aperiodic, or "chaotic" behavior over time. Like the
 #                Lotka-Volterra systems with 3 coupled equations, they may
 #                appear similar at various times in their trajectory,
 #                but they are never exactly the same. Frequently, these have
-#                a fractal geometry.  Rules 18, 60, 75, 86 and 105 are striking
-#                examples.
+#                a fractal geometry.  Rules 18, 45, 60, 75, 86 and 105 are
+#                striking examples.
+#
+plotFigure("CA.6", iRule = 18, nx = 300, ny = 500)
 
 # Class IV CAs:  are undecidable. The quintessential example is the
 #                famous rule 110.
 
-# Try some of these by setting the parameter iRule
-# to their respective value, for example:
+plotFigure("CA.6", iRule = 110, nx = 300, ny = 500)
+
+# Try some of these by setting the parameter iRule to their respective value,
+# for example:
 
 plotFigure("CA.6", iRule = 193, nx=300, ny=500)  # Have you seen this before?
 
@@ -273,7 +280,8 @@ plotFigure("CA.7", i = 55, j = 34)
 
 # ==   4.3  Four classes  ======================================================
 
-# Here we plot only one of the four classes each ...
+# Here we plot only one of the four classes each with the Fibonacci word initial
+# state...
 
 # Class 1
 plotFigure("CA.8", iRule = 36,
@@ -295,7 +303,7 @@ plotFigure("CA.8", iRule = 110,
            nx = 233, ny = 233, vInit = "fib")
 
 
-# ===   4.3.1  Digression: initializations
+# ===   4.3.1  Digression: initializations                  
 
 # Nb. the code I wrote for this exploration can generate a number of different
 # initializations:
@@ -338,8 +346,8 @@ plotFigure("CA.8", iRule=110, nx=233, ny=233, vInit = "fib")
 
 # Therefore we will open an external graphics window. This is reasonably
 # responsive on the Mac, but I don't know how well it works on Windows. Let me
-# know. After each plot we sleep for a second or so (you can adjust that) and you can
-# interrupt the cycle by pressing the red STOP-sign.
+# know. After each plot we sleep for a second or so (you can adjust that) and
+# you can interrupt the cycle by pressing the red STOP-sign.
 
 dev.new()
 
@@ -384,7 +392,7 @@ plotFigure("CA.10", iRule=165, nx=378, ny=610, vInit="fib", nSteps = 4000)
 # ... (2) it does not get boring.
 
 # How about this one ...
-plotFigure("CA.10", iRule=165, nx=64*8, ny=300, vInit="fib", nSteps = 300)
+plotFigure("CA.10", iRule=165, nx=64*8, ny=330, vInit="fib", nSteps = 300)
 # Wait for it ...
 
 # There is much to be explored. For this course, we are pursuing this in a
@@ -400,7 +408,7 @@ plotFigure("CA.10", iRule=165, nx=64*8, ny=300, vInit="fib", nSteps = 300)
 plotFigure("CA.10", iRule=110,
            nx=98, ny=294,
            vInit=0.5,seed=2748,
-           nSteps=2000)
+           nSteps=1400)
 
 # This evolution of CA 110 starts off from a jumbled array of triangles, formed
 # and vanishing without order or purpose. Soon a crystalline background ether

@@ -16,6 +16,7 @@
 #           1.0  First demo in tutorial
 #
 # ToDo:
+#   Change variable plot density to second(!) derivative
 #   Time-series analysis?
 #
 # Notes:
@@ -129,8 +130,8 @@ if (! requireNamespace("plotrix", quietly=TRUE)) {
 if (! requireNamespace("plot3D", quietly = TRUE)) {
   install.packages("plot3D")
 }
-#  library(help   = plotrix)     # basic information
-#  data(package  = "plotrix")    # available datasets
+#  library(help   = plot3D)     # basic information
+#  data(package  = "plot3D")    # available datasets
 
 
 
@@ -621,7 +622,8 @@ phasePlot(out, main = "Perturbation trajectory")
 phasePlot(out, main = "Perturbation trajectory", colMode = "length")
 
 
-# The perturbation shifts the system out of its equilibrium, but it quickly swings back to a new, stable(!) regime.
+# The perturbation shifts the system out of its equilibrium, but it quickly
+# swings back to a new, stable(!) regime.
 
 # =    8  Going 3D: Chaos  =====================================================
 

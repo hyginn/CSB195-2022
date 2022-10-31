@@ -189,12 +189,6 @@ plotFigure <- function(fig, showSource, ...) {
 
   } else if (fig == "CA.9" ) { # ===============================================
 
-    safeSleep <- function(tSleep) {
-      # alternative to Sys.sleep().
-      # cf. https://stackoverflow.com/questions/1174799/how-to-make-execution-pause-sleep-wait-for-x-seconds-in-r
-      then <-Sys.time()
-      while((as.numeric(Sys.time()) - as.numeric(then)) < tSleep){} #dummy while loop
-    }
 
     if (is.null(myArgs$vInit)) { myArgs$vInit <- "NULL" }
     if (length(myArgs$vInit) > 1 ) { myArgs$vInit <- "vector" }

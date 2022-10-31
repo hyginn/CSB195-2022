@@ -155,8 +155,8 @@ applyRule <- function(R, s) {
   #'   applyRule( 30, c(1, 0, 0))
 
   v <- as.integer(intToBits(R)[8:1] == "01")  # compute the output integers
-  # from the binary representation
-  # of R
+                                              # from the binary representation
+                                              # of R
   idx <-  8 - (s[1]*4) - (s[2]*2) - (s[3]*1)  # compute the index in v that
   # represents s
 

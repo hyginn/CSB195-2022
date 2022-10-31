@@ -200,6 +200,23 @@ txt2m <- function(txt) {
 }
 
 
+# == safeSleep()
+safeSleep <- function(tSleep) {
+#' @title safeSleep
+#' @param tSleep Sleep for tSleep seconds
+#' @return NULL invisibly
+#' @details Alternative to Sys.sleep() that handles interrupts more safely.
+#' cf. https://stackoverflow.com/questions/1174799
+
+  then <-Sys.time()
+  while((as.numeric(Sys.time()) - as.numeric(then)) < tSleep){
+    ;   # twiddle your thumbs
+  }
+  return(invisible(NULL))
+}
+
+
+
 
 if (FALSE) {
   # pseudo-order in the non-repeating Fibonacci word of length 8*13

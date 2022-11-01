@@ -1,11 +1,16 @@
 # tocID <- "gameOfLife.R"
 #
-# Demo code for CSB195-2022
+# Demo code
 #
 # 2022-10-23
 # Boris Steipe (boris.steipe@utoronto.ca)
 #
-# Version:  1.0
+#
+# Version:  1.1
+#
+# Versions:
+#           1.1 Updated, expanded and added examples section
+#           1.0 In class demo
 #
 # ==============================================================================
 #
@@ -15,15 +20,15 @@
 #TOC> 
 #TOC>   Section  Title                             Line
 #TOC> -------------------------------------------------
-#TOC>   1        Structures and Functions            34
-#TOC>   1.1        wrap()                            40
-#TOC>   1.2        runGOL()                          54
-#TOC>   2        Explorations                       100
-#TOC>   2.1        The Glider                       123
-#TOC>   2.2        A Glider-gun                     134
-#TOC>   2.3        Max Fill                         146
-#TOC>   2.4        Pentomino                        164
-#TOC>   3        Next ?                             175
+#TOC>   1        Structures and Functions            39
+#TOC>   1.1        wrap()                            45
+#TOC>   1.2        runGOL()                          59
+#TOC>   2        Explorations                       105
+#TOC>   2.1        The Glider                       128
+#TOC>   2.2        A Glider-gun                     139
+#TOC>   2.3        Max Fill                         151
+#TOC>   2.4        Pentomino                        169
+#TOC>   3        Next ?                             180
 #TOC> 
 #TOC> ==========================================================================
 

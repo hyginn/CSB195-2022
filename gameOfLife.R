@@ -2,8 +2,9 @@
 #
 # Demo code
 #
-# 2022-10-23
-# Boris Steipe (boris.steipe@utoronto.ca)
+# 2022 -10  -  2022 - 11
+#
+# Boris  Steipe (boris.steipe@utoronto.ca)
 #
 #
 # Version:  1.1
@@ -20,15 +21,15 @@
 #TOC> 
 #TOC>   Section  Title                             Line
 #TOC> -------------------------------------------------
-#TOC>   1        Structures and Functions            39
-#TOC>   1.1        wrap()                            45
-#TOC>   1.2        runGOL()                          59
-#TOC>   2        Explorations                       105
-#TOC>   2.1        The Glider                       128
-#TOC>   2.2        A Glider-gun                     139
-#TOC>   2.3        Max Fill                         151
-#TOC>   2.4        Pentomino                        169
-#TOC>   3        Next ?                             180
+#TOC>   1        Structures and Functions            40
+#TOC>   1.1        wrap()                            46
+#TOC>   1.2        runGOL()                          60
+#TOC>   2        Explorations                       106
+#TOC>   2.1        The Glider                       129
+#TOC>   2.2        A Glider-gun                     140
+#TOC>   2.3        Max Fill                         152
+#TOC>   2.4        Pentomino                        170
+#TOC>   3        Next ?                             181
 #TOC> 
 #TOC> ==========================================================================
 

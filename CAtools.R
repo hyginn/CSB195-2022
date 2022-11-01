@@ -2,12 +2,15 @@
 #
 # Utilities for Cellular Automata
 #
-# 2022-10-28
+# 2022 - 10  -  2022 - 11
+#
 # Boris Steipe (boris.steipe@utoronto.ca)
 #
-# Version:  1.0
+# Version:  2.0
 #
 # Versions:
+#           2.0   Update logic to be use applyRule in standard, probabilistic
+#                   or time-reversible mode.
 #           1.0   First version
 #
 #  Notes:
@@ -20,7 +23,19 @@
 # ==============================================================================
 
 
-# ==   2.1  showRule()  ========================================================
+#TOC> ==========================================================================
+#TOC> 
+#TOC>   Section  Title                Line
+#TOC> ------------------------------------
+#TOC>   1        showRule()             39
+#TOC>   2        plotRule()             83
+#TOC>   3        applyRule()           156
+#TOC>   4        CA()                  213
+#TOC> 
+#TOC> ==========================================================================
+
+
+# =    1  showRule()  ==========================================================
 
 showRule <- function(R, quietly = FALSE) {
   #' @title showRule()
@@ -64,7 +79,7 @@ showRule <- function(R, quietly = FALSE) {
   return(invisible(v))
 }
 
-# ==   2.1  plotRule()  ========================================================
+# =    2  plotRule()  ==========================================================
 
 plotRule <- function(R, main, cap) {
   #' @title plotRule()
@@ -137,36 +152,69 @@ if (FALSE) {
 }
 
 
-# ==   2.2  applyRule()  =======================================================
+# =    3  applyRule()  =========================================================
 
-applyRule <- function(R, s) {
+applyRule <- function(R, s, mode = "std", p, prev) {
   #' @title applyRule()
-  #' @description The new state of a cellular automaton is computed by
-  #' applying the Wolfram code rule-set R to the neighbourhood state s. This
-  #' requires only the rule number, since the binary representation
-  #' of the Wolfram code number IS the rule set.
+  #' @description The new state of a cellular automaton is computed by applying
+  #'   the Wolfram code rule-set R to the neighbourhood state s.
   #'
-  #' @param  R   int. The Wolfram code for a 1D cellular automaton
-  #'                      rule set; an integer in [0, 255].
-  #' @param  s   int. A binary vector of length three.
+  #' @param  R    int The Wolfram code for a 1D cellular automaton rule set; an
+  #'   integer in [0, 255].
+  #' @param  s    int A binary vector of length three.
+  #' @param  mode chr The mode of applying the rule. One of ["std", "tRev", "pI"
+  #'   and "pO"].
+  #' @param p     num Probability of making an error while applying the code
+  #'   rule.
+  #' @param prev  int The state of the cell at t-1
+  #' @details   Computing the output state requires only the rule number, since
+  #'   the binary representation of the Wolfram code number IS the rule set. It
+  #'   does not need to be separately stored. This is done in the "std" mode
+  #'   (default). There are three modifications to this "standard" way of
+  #'   updating the cell's state: in mode "pI", each digit of the input state s
+  #'   is inverted (1->0 and 0->1) with probability p. In mode "pO" the output
+  #'   state is inverted with probability p. In mode tRev the output state is
+  #'   combined xor() with the previous state (prev), to produce a
+  #'   time-reversible state change
   #' @return      0 or 1
   #' @examples
-  #'   applyRule(110,  c(1, 0, 1))
-  #'   applyRule( 30, c(1, 0, 0))
+  #'   applyRule(110, c(1,0,1))                      # standard
+  #'   applyRule(239, c(1,0,0), mode="pI", p=0.5)    # probabilistic
+  #'   applyRule(  0, c(1,0,0), mode="pO", p=0.5)    # probabilistic
+  #'   applyRule( 37, c(1,0,0), mode="tRev", prev=1) # time-reversible
+
+  if (mode == "pI") {    # probabilistic change of the input state
+    x <- runif(3) < p    # three random values compared to the threshold
+    s[x] <- 1 - s[x]     # invert the randomly selected cells
+  }
+
 
   v <- as.integer(intToBits(R)[8:1] == "01")  # compute the output integers
                                               # from the binary representation
                                               # of R
   idx <-  8 - (s[1]*4) - (s[2]*2) - (s[3]*1)  # compute the index in v that
-  # represents s
+                                              # represents s
+  S <- v[idx]                                 # fetch the state S from v
 
-  return(v[idx])                              # return the s'th element of v
+
+  if (mode == "pO") {                # probabilistic change of the output state
+    if (p > runif(1)) {              # random value compared to the threshold
+      S <- 1-S                       # invert output state
+    }
+  } else if (mode == "tRev") {       # compute time-reversible output
+    S <- as.numeric(xor(S, prev))    # xor() with state at t-1
+  }
+
+  return(S)                          # return output state
 }
 
 
-# ==   2.3  CA()  ==============================================================
+# =    4  CA()  ================================================================
 
-CA <- function(R, nx = 100, ny = 100,
+CA <- function(R,
+               ruleMode = "std",
+               pR,
+               nx = 100, ny = 100,
                vInit, seed = NULL,
                wrap = TRUE, N = NULL) {
   #' @title CA()
@@ -175,6 +223,9 @@ CA <- function(R, nx = 100, ny = 100,
   #'
   #' @param  R   int. The Wolfram code for a 1D cellular automaton rule set; an
   #'   integer in [0, 255].
+  #' @param ruleMode  Run this as a standard, probabilistic, or time-reversible
+  #' application of rule R. (See documentaation for applyRule.)
+  #' @param pR  probability for one of the probabilistic rule applications.
   #' @param  nx  the width of the space in which the automaton evolves
   #' @param  ny  the number of steps to compute
   #' @param  vInit   the initialization vector. See details.
@@ -197,26 +248,42 @@ CA <- function(R, nx = 100, ny = 100,
   #' @examples
   #'
 
+  i0 <- 1 # this is the index of the starting row. It is always 1, except for
+          # time reversible CAs. Then it is 2.
+
+  m <- matrix(integer(nx * ny), ncol = nx)
+
+  # All the initialization stuff.
   if (missing(vInit) || is.null(vInit)) { # place a single 1 in the middle
-    vInit <- integer(nx)
-    vInit[round((nx) / 2)] <- 1
+
+    m[1, round((nx) / 2)] <- 1
+
+  } else if (ruleMode == "tRev"){
+    stopifnot(ncol(vInit) == nx && nrow(vInit) == 2)
+    m[1:2, ] <- vInit
+    i0 <- 2
+
   } else if (length(vInit) > 1){  # recycle this vector
-    vInit <- rep(vInit, ceiling(nx/length(vInit)))[1:nx]
+    m[1, ] <- rep(vInit, ceiling(nx/length(vInit)))[1:nx]
+
   } else if (is.numeric(vInit) && vInit >= 0 && vInit < 1) { # probability
     oldSeed <- .Random.seed
     set.seed(seed)
-    vInit <- sample(0:1, nx, replace= TRUE, prob = c(1-vInit, vInit))
+    m[1, ] <- sample(0:1, nx, replace= TRUE, prob = c(1-vInit, vInit))
     .Random.seed <- oldSeed  # Be considerate, reset the RNG to how you found it
+
   } else if (is.numeric(vInit) && vInit >= 1) { # place isolated 1s
     idx <- cumsum(c(0.5, rep(1, vInit - 1), 0.5))
     idx <- round((idx / max(idx)) * nx)[-length(idx)]
-    vInit <- integer(nx)
-    vInit[idx] <- 1
+    m[1, idx] <- 1
+
   } else if (vInit == "fib") { # Fibonacci word
-    vInit <- as.integer(unlist(strsplit(fibWord(nx), "")))
+    m1[1, ] <- as.integer(unlist(strsplit(fibWord(nx), "")))
+
   } else if (grepl("^[01]+$",vInit)) { # string of 0s and 1s
-    vInit <- as.integer(unlist(strsplit(vInit, "")))
-    vInit <- rep(vInit, ceiling(nx/length(vInit)))[1:nx]
+    x <- as.integer(unlist(strsplit(vInit, "")))
+    m[1, ] <- rep(x, ceiling(nx/length(vInit)))[1:nx]
+
   } else {
     stop("PANIC: I don't know what to do with this vInit.")
   }
@@ -228,27 +295,26 @@ CA <- function(R, nx = 100, ny = 100,
     cat("\n")
   }
 
-  stopifnot(nx == length(vInit))
-
-  m <- matrix(integer(nx * ny), ncol = nx)
-  m[1, ] <- vInit
-
   if (wrap) {
     m <- cbind(m[ ,nx], m, m[ ,1]) # wrap first and last column
     nx <- nx + 2                  # increase nx accordingly
   }
 
 
-  for (i in 1:(ny-1)) {
+  for (i in i0:(ny-1)) {
     for (j in 2:(nx-1)) {
-      m[(i+1), j] <- applyRule(R, m[i, (j-1):(j+1)])
+      m[(i+1), j] <- applyRule(R,
+                               m[i,(j-1):(j+1)],
+                               ruleMode,
+                               pR,
+                               prev = m[i-1, j])
     }
     if (wrap) {
       m[i+1, 1] <- m[i+1, j]     # wrap last cell to beginning
       m[i+1, nx] <- m[i+1, 2]    # wrap first cell to end
     }
     if (N > 0) {
-      imPlot(m)
+      imPlot(m)                  # plot it out row-by-row
       dev.flush()
       N <- N-1
       cat(sprintf("\rStep %d", Nmax - N))
@@ -258,7 +324,11 @@ CA <- function(R, nx = 100, ny = 100,
   for (k in seq_len(N)) { # scroll if N is > 0
     m[1:(ny-1), ] <- m[2:ny, ] # shift the matrix one row up
     for (j in 2:(nx-1)) {
-      m[(i+1), j] <- applyRule(R, m[i, (j-1):(j+1)])
+      m[(i+1), j] <- applyRule(R,
+                               m[i,(j-1):(j+1)],
+                               ruleMode,
+                               pR,
+                               prev = m[i-1, j])
     }
     m[i+1, 1] <- m[i+1, nx-1]  # wrap last cell to beginning
     m[i+1, nx] <- m[i+1, 2]    # wrap first cell to end
@@ -273,6 +343,32 @@ CA <- function(R, nx = 100, ny = 100,
   }
 
   return(m)
+}
+
+if (FALSE) {
+
+  # ==  VALIDATE ===============================================================
+
+  # Standard mode, Rule 18, all defaults
+  m <- CA(18); imPlot(m)
+
+  # probabilistic CA
+  m <- CA(18, ruleMode = "pI", pR = 0.0002);   imPlot(m)
+  m <- CA(18, ruleMode = "pO", pR = 0.0002);   imPlot(m)
+
+  # time-reversible CA
+  X <- 200
+  Y <- 323
+
+  mI <- matrix(integer(2*X), nrow = 2)   # two empty rows
+  mI[2, sample(1:X, 13)] <- 1             # thirteen random 1s
+
+  m <- CA(37, nx=X, ny=Y, ruleMode="tRev", vInit=mI);   imPlot(m)
+
+  mI <- matrix(integer(2*X), nrow = 2)   # two empty rows
+  mI[2, sample(1:X, 17)] <- 1             # thirteen random 1s
+  m <- CA(22, nx=X, ny=Y, ruleMode="tRev", vInit=mI);   imPlot(m)
+
 }
 
 

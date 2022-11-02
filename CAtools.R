@@ -24,14 +24,14 @@
 
 
 #TOC> ==========================================================================
-#TOC> 
+#TOC>
 #TOC>   Section  Title                Line
 #TOC> ------------------------------------
 #TOC>   1        showRule()             39
 #TOC>   2        plotRule()             83
 #TOC>   3        applyRule()           156
 #TOC>   4        CA()                  213
-#TOC> 
+#TOC>
 #TOC> ==========================================================================
 
 
@@ -278,7 +278,7 @@ CA <- function(R,
     m[1, idx] <- 1
 
   } else if (vInit == "fib") { # Fibonacci word
-    m1[1, ] <- as.integer(unlist(strsplit(fibWord(nx), "")))
+    m[1, ] <- as.integer(unlist(strsplit(fibWord(nx), "")))
 
   } else if (grepl("^[01]+$",vInit)) { # string of 0s and 1s
     x <- as.integer(unlist(strsplit(vInit, "")))

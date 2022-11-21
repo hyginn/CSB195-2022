@@ -5,12 +5,13 @@
 #              and simulation in assessing the optimality of the genetic
 #              code.
 #
-# Version:  1.1
+# Version:  1.1.1
 #
-# Date:     2022-10
+# Date:     2022 - 10  -  2022 - 11
 # Author:   Boris Steipe (boris.steipe@utoronto.ca)
 #
 # Versions:
+#           1.1.1  Move sumRndSim.Rds to data/
 #           1.1    A few clarifying edits
 #           1.0    Finalized and posted.
 #           0.1    First version during lecture.
@@ -409,8 +410,8 @@ endTime <- Sys.time()
 
 endTime - startTime                # 25 minutes for me with 100,000 trials
 
-# saveRDS(sumRndSim, "sumRndSim.Rds")     # ... back it up, just in case
-sumRndSim <- readRDS("sumRndSim.Rds")
+# saveRDS(sumRndSim, "data/sumRndSim.Rds")     # ... back it up, just in case
+sumRndSim <- readRDS("data/sumRndSim.Rds")
 summary(sumRndSim)
 
 

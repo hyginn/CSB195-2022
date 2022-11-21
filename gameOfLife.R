@@ -7,9 +7,10 @@
 # Boris  Steipe (boris.steipe@utoronto.ca)
 #
 #
-# Version:  1.1
+# Version:  1.1.1
 #
 # Versions:
+#           1.1.1 Moved src and pattern files to R/ resp. data/ directories
 #           1.1 Updated, expanded and added examples section
 #           1.0 In class demo
 #
@@ -18,19 +19,19 @@
 
 
 #TOC> ==========================================================================
-#TOC> 
+#TOC>
 #TOC>   Section  Title                             Line
 #TOC> -------------------------------------------------
-#TOC>   1        Structures and Functions            40
-#TOC>   1.1        wrap()                            46
-#TOC>   1.2        runGOL()                          60
-#TOC>   2        Explorations                       106
-#TOC>   2.1        The Glider                       129
-#TOC>   2.2        A Glider-gun                     140
-#TOC>   2.3        Max Fill                         152
-#TOC>   2.4        Pentomino                        170
-#TOC>   3        Next ?                             181
-#TOC> 
+#TOC>   1        Structures and Functions            41
+#TOC>   1.1        wrap()                            47
+#TOC>   1.2        runGOL()                          61
+#TOC>   2        Explorations                       107
+#TOC>   2.1        The Glider                       130
+#TOC>   2.2        A Glider-gun                     141
+#TOC>   2.3        Max Fill                         153
+#TOC>   2.4        Pentomino                        168
+#TOC>   3        Next ?                             179
+#TOC>
 #TOC> ==========================================================================
 
 
@@ -39,8 +40,8 @@
 
 # =    1  Structures and Functions  ============================================
 
-source("imPlot.R")
-source("seedGOL.R")
+source("R/imPlot.R")
+source("R/seedGOL.R")
 
 
 # ==   1.1  wrap()  ============================================================
@@ -143,7 +144,7 @@ if (FALSE) {
   # around ... and around  ... and around
 
   X <- 57; Y <- 50; myWorld <- matrix(integer(X * Y), ncol = X)
-  myWorld <- placeCell("GosperGun.cell", myWorld, 5, 20)
+  myWorld <- placeCell("data/GosperGun.cell", myWorld, 5, 20)
   imPlot(myWorld, drawGrid = FALSE)
 
   runGOL(myWorld, nTick = 1000, drawGrid = FALSE)
@@ -158,13 +159,10 @@ if (FALSE) {
   # two-fold symmetry axis?
 
   X <- 150; Y <- 150; myWorld <- matrix(integer(X * Y), ncol = X)
-  myWorld <- placeLif("maxFill.lif", myWorld, 60, 60)
+  myWorld <- placeLif("data/maxFill.lif", myWorld, 60, 60)
   imPlot(myWorld, drawGrid = FALSE)
 
   runGOL(myWorld, nTick = 1000, drawGrid = FALSE)
-
-  myWorld <- matrix(integer(X * Y), ncol = X)
-  myWorld <-
 
 
 # ==   2.4  Pentomino  =========================================================
@@ -172,7 +170,7 @@ if (FALSE) {
   # but perhaps a sesame seed? Or a riot?
 
   X <- 150; Y <- 150; myWorld <- matrix(integer(X * Y), ncol = X)
-  myWorld <- placeCell("pentomino.cell", myWorld, 75, 75)
+  myWorld <- placeCell("data/pentomino.cell", myWorld, 75, 75)
   imPlot(myWorld, drawGrid = FALSE)
 
   runGOL(myWorld, nTick = 1000, drawGrid = FALSE)

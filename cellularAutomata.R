@@ -5,9 +5,10 @@
 # 2022-10-30
 # Boris Steipe (boris.steipe@utoronto.ca)
 #
-# Version:  1.2
+# Version:  1.2.1
 #
 # Versions:
+#           1.2.1 Move utility scripts to R/
 #           1.2   Move most code out ... teaching the code is not a critical
 #                   objective here. Convert to "interactive" textbook" paradigm.
 #           1.1   Updates after demo in course. More extensive explorations.
@@ -41,16 +42,16 @@
 #TOC>
 #TOC>   Section  Title                                                  Line
 #TOC> ----------------------------------------------------------------------
-#TOC>   1        INTRODUCTION                                             58
-#TOC>   2        FUNCTIONS                                                72
-#TOC>   3        FIRST STEPS                                             105
-#TOC>   4        EXPLORATIONS                                            170
-#TOC>   4.1        First exploration. Step through the rules ...         173
-#TOC>   4.2        Digression: Fibonacci words                           252
-#TOC>   4.3        Four classes                                          281
-#TOC>   4.3.1          Digression: initializations                       306
-#TOC>   5        EVERY SINGLE CA                                         337
-#TOC>   6        LONG EVOLUTIONS                                         359
+#TOC>   1        INTRODUCTION                                             59
+#TOC>   2        FUNCTIONS                                                73
+#TOC>   3        FIRST STEPS                                             106
+#TOC>   4        EXPLORATIONS                                            171
+#TOC>   4.1        First exploration. Step through the rules ...         174
+#TOC>   4.2        Digression: Fibonacci words                           253
+#TOC>   4.3        Four classes                                          282
+#TOC>   4.3.1          Digression: initializations                       307
+#TOC>   5        EVERY SINGLE CA                                         338
+#TOC>   6        LONG EVOLUTIONS                                         360
 #TOC>
 #TOC> ==========================================================================
 
@@ -83,21 +84,21 @@
 # the arguments. e.g. plotFigure("CA.1", showSource)
 
 
-source("plotFigure.R")      # Figures
+source("R/plotFigure.R")    # Figures
 # == plotFigure()       === compute and plot a figure
 # == catSection()       === optionally cat() the script source
 
-source("imPlot.R")          # plot the contents of a matrix
+source("R/imPlot.R")        # plot the contents of a matrix
 # == imPlot()           === plots a raster image
 # == imText()           === adds text to a raster image
 
-source("CAtools.R")         # sundry utilities to work with cellular automata
+source("R/CAtools.R")       # sundry utilities to work with cellular automata
 # == showRule()         === prints the rule set of a cellular automaton
 # == plotRule()         === plots a graphic of a cellular automaton's rule set
 # == applyRule()        === applies a rule to three input elements
 # == CA()               === run a cellular automaton
 
-source("fibWord.R")         # compute a Fibonacci word
+source("R/fibWord.R")       # compute a Fibonacci word
 # == fibWord()          === a non-repeating string of 1s and 0s
 
 

@@ -5,12 +5,13 @@
 #              function annotations in GOa, and the STRING database interaction
 #              information. ID mapping is done via HGNC and BioMart data.
 #
-# Version:  0.3
+# Version:  0.3.1
 #
 # Date:     2022-11
 # Author:   Boris Steipe (boris.steipe@utoronto.ca)
 #
 # Versions:
+#           0.3.1  Typos and clarifications
 #           0.3    Include ID mapping concerns, and add STRING data.
 #                  Class code 2022-11-28
 #           0.2    Add GOa data; define up with a datamodel
@@ -23,19 +24,20 @@
 
 
 #TOC> ==========================================================================
-#TOC>
-#TOC>   Section  Title                                Line
-#TOC> ----------------------------------------------------
-#TOC>   1        Review: R idioms                       46
-#TOC>   2        Download Gene Ontology Data            98
-#TOC>   2.1        Annotation Data                     106
-#TOC>   2.2        GO Term Data                        346
-#TOC>   2.2.1          Download GO term data           362
-#TOC>   2.2.2          Read the data                   377
-#TOC>   3        Validate it                           811
-#TOC>   4        STRING data                           817
-#TOC>   5        Next steps                            840
-#TOC>
+#TOC> 
+#TOC>   Section  Title                                        Line
+#TOC> ------------------------------------------------------------
+#TOC>   1        Review: R idioms                               50
+#TOC>   2        Download Gene Ontology Data                   102
+#TOC>   2.1        Annotation Data                             110
+#TOC>   2.2        GO Term Data                                356
+#TOC>   2.2.1          Download GO Term data                   374
+#TOC>   2.2.2          Read GO Term data                       389
+#TOC>   3        A relational data model for GO data           605
+#TOC>   3.1        Validate GO Term data                       843
+#TOC>   4        STRING data                                   849
+#TOC>   5        Next steps                                    866
+#TOC> 
 #TOC> ==========================================================================
 
 
@@ -179,12 +181,11 @@ length(unique(tmp$GOid))  # 18883
 # The three ontologies
 # ====================
 unique(tmp$Aspect)          # F: molecular function
-# C: cellular component
-# P: biological process
+                            # C: cellular component
+                            # P: biological process
 
 # Taxonomy
 # ========
-#
 # The taxID for homo sapiens is 9606.
 sum(tmp$Taxon == "taxon:9606")  # 635,172 ???
 unique(tmp$Taxon) # What are these ?? Are these human genes?
@@ -257,7 +258,7 @@ rownames(EC) <- EC$code
 EC$code[! (EC$code %in% unique(tmp$EC))]
 
 # How frequent is each evidence code
-oPar = par(mar=c(0.5, 0.5, 0.5, 0.5))
+oPar <- par(mar=c(0.5, 0.5, 0.5, 0.5))
 N <- length(unique(tmp$EC))
 myCols <- hcl.colors(N, "Viridis")
 pie(sort(table(tmp$EC)), col = myCols)
@@ -325,30 +326,39 @@ GOa <- tmp[! duplicated(tmp$key), c("sym",
 length(unique(GOa$sym))   # 19818 genes
 length(unique(GOa$GOid))  # 18883 annotations
 
-# Summary of our cleaned data in the GOa data frame:
-
-# -  Column "sym" contains HGNC gene symbols, or UniProt IDs if no gene symbol is
-#    available.
-# -  Column "name" contains gene names.
-# -  Column "GOid" contains GO IDs for terms that were annotated to a gene.
-# -  Column "EC" contains evidence codes for all annotations.
-
 # Note that gene symbol and gene name is redundant information in this table.
-# The annotation depends only on the symbol. Thus we split the table apart:
+# The annotation depends only on the symbol. Thus we move the name into a
+# separate table that we will call "gene":
 
 sel <- ! duplicated(GOa$sym)
 gene <- data.frame(sym  = GOa$sym[sel],
                    name = GOa$name[sel])
 rownames(gene) <- gene$sym
 
-# ... and we remove the redundant colum from GOa:
+# ... and we drop the redundant column from GOa:
 GOa$name <- NULL
+
+
+# Summary of our cleaned data in the "GOa" data frame:
+# -  Column "sym" contains HGNC gene symbols, or UniProt IDs if no gene symbol
+#      is available.
+# -  Column "GOid" contains GO IDs for terms that were annotated to a gene.
+# -  Column "EC" contains evidence codes for all annotations.
+
+
+# Summary of our date in the "gene" data frame:
+# -  Column "sym" has the same information as the column by that name in GOa.
+#       We can cross-reference it to and from there.
+# -  Column "name" contains gene names.
+#
 
 
 # ==   2.2  GO Term Data  ======================================================
 
 # Next we need to look at the actual GO terms. We might hope that the "generic
-# GO slim" can be used as  a compact representation of the GO database:
+# GO slim" can be used as  a compact representation of the GO database - and
+# many manuscripts do exactly that, this is a very popular way to work with GO.
+# But:
 
 # According to http://geneontology.org/docs/go-subset-guide/ a "slim"
 # is a subset of the Gene Ontology that is useful for a broad overview of
@@ -361,7 +371,7 @@ GOa$name <- NULL
 # about how different partitions of function can be obtained from the tree.
 
 
-# ===   2.2.1  Download GO term data
+# ===   2.2.1  Download GO Term data              
 
 # To work with GO, we need to download the basic version of the ontology.
 # According to GO: (http://geneontology.org/docs/download-ontology/) this data
@@ -376,8 +386,11 @@ myFile <- file.path(DATADIR, "go-basic.obo")
 file.exists(myFile)
 
 
-# ===   2.2.2  Read the data
-# First read
+# ===   2.2.2  Read GO Term data                  
+
+# Read this text data line by line. Note: this is not structured like a csv or
+# tsv spread sheet, rather the data is stored in sections that are separetd by a
+# [Term] delimiter, and have keys at the beginning of each record.
 
 txt <- readLines(myFile)
 
@@ -392,19 +405,19 @@ head(txt, 50)
 # But are there other tokens? Let's look at all lins that begin with an
 # open square bracket, and table them.
 
-table(txt[grep("^\\[", txt)]) # Look carefully at this: we are using grep() to
-# find the indices of all lines in txt that start
-# with a square bracket. The we use those indices
-# to subset txt and return a vector of exactly
-# those lines. This vector of text elements is
-# passed to table() to count the occurances.
+table(txt[grep("^\\[", txt)])
+
+# Look carefully at this expression: we are using grep() to find the indices of
+# all lines in txt that start with a square bracket. The we use those indices to
+# subset txt and return a vector of exactly those lines. This vector of text
+# elements is passed to table() to count the occurances.
 
 # [Term] [Typedef]
 # 47397         5
 
 # The bad news is that we need to identify terms and typedefs separately. The
 # good news is that our regular expression identifies both. So to identify
-# only "Term"s, we
+# only [Term]s, we
 #  - fetch all indices to "[" characters at the beginning of a line
 #  - subset txt from each of the  "[" indices to the next
 #  - ignore the term if it contains elements we don't want
@@ -422,7 +435,6 @@ for (i in 15:35) {
 
 # Record types
 # ============
-
 # Next: what kind of information do we have in this file in the first place?
 # Lines of this data are prefixed with a keyword, followed by a colon.
 # To table() the keywords, we can use strsplit() to split on colons, and then
@@ -435,6 +447,7 @@ for (i in 1:length(tmp)) {
 }
 
 table(tmp)
+
 
 # namespace: and id:
 # ==================
@@ -460,7 +473,7 @@ for (i in 1:(length(idx) - 1)) {
 
 # Now, it would be great if we can simply extract IDs as row-labels for a data
 # frame - but those pesky typedef records are in the way. Rather than
-# special-casing them, we remove them outright. That's sane advice: rather than
+# special-casing them, we remove them outright. That is sane advice: rather than
 # special-casing a workflow for rare exceptions, sometimes it is better to
 # sanitize a dataset so it satisfies your assumptions.
 
@@ -469,9 +482,14 @@ for (i in 1:(length(idx) - 1)) {
 
 # In this case, I happen to know that the [typedef] records are all at the end
 # of the file. But they might not be. So here is a more generic process that
-# blanks all lines of an excluded subset, and then removes all empty lines. We
-# get rid of the records that are not a [Term], and while we are at it, we also
-# get rid of the "is_obsolete: true" records.
+# blanks all lines of an excluded subset, and then removes all empty lines.
+# (Blanking means replacing the line with an empty string.) We get rid of the
+# records that are not a [Term], and while we are at it, we also get rid of the
+# "is_obsolete: true" records.
+
+# Recompute the index, just to make sure ...
+idx <- grep("^\\[", txt)         # looks for "[" at the beginning of a line
+idx <- c(idx, length(txt) + 1)   # add an index one past the last line
 
 for (i in 1:(length(idx) - 1)) {
   pBar(i, length(idx))
@@ -495,7 +513,7 @@ length(txt)   # 453,306 ... was 543,440
 head(txt, 20)
 
 # ... validate ...
-x <- grep("is_obsolete", txt)
+x <- grep("is_obsolete", txt) # none left
 
 # ... and recompute our index
 
@@ -504,7 +522,7 @@ idx <- c(idx, length(txt) + 1)   # add an index one past the last line
 
 # Validate:
 all(txt[idx[1:(length(idx)-1)]] == "[Term]")  # Note: if we include the last
-# element, we get a NA result.
+                                              # element, we get a NA result.
 
 
 # Now we need to revisit the contents of our records - check the keywords:
@@ -526,7 +544,7 @@ table(tmp)
 # but what others exist? And, does every record even have an "is_a"
 # relationship?
 
-noIs_a <- numeric()
+noIs_a <- numeric()   # Stores all [Term]s that do not have an is_a record/
 
 for (i in 1:(length(idx) - 1)) {
   pBar(i, length(idx))
@@ -544,7 +562,7 @@ for (i in 1:(length(idx) - 1)) {
 #
 # Terms without "is_a" relationships
 #
-for (i in 1:length(noIs_a)) {
+for (i in seq_along(noIs_a)) {
 
   first <- idx[noIs_a[i]]             # [Term]
   last  <- idx[noIs_a[i] + 1] - 1     # one line before the next [Term]
@@ -569,7 +587,8 @@ for (i in 1:(length(idx) - 1)) {
 table(nIs_a)
 
 
-# What is the contents of the 15,467 "relationship:" records?
+
+# Next: what is the contents of the 15,467 "relationship:" records?
 
 sel <- grep("^relationship", txt)
 x <- table(txt[sel])
@@ -582,14 +601,16 @@ for (i in 1:length(sel)) {
 myRelations <- names(table(x))
 
 
-# This defines the constraints on the data structure we need, to work with this
-# information.
 
-# Therefore we next build a data model: a schema that supports work with GO
-# data.
+# =    3  A relational data model for GO data  =================================
 
-# The database is a list that contains data frames - the tables that store
-# the information about each entity.
+# What we did so far defines the constraints on the data structure we need, to
+# work with GO data information. Therefore we next build a data model: a
+# schema that supports work with GO data.
+
+# The data structure we use to implement this is a list, and the list contains
+# various  data frames - the tables that store the information about each
+# entity.
 
 GO <- list()
 
@@ -655,22 +676,23 @@ GO$edge <- data.frame(ID = integer(nEdge),
 
 
 
-# Fill the term and edge tables
+# Fill the term and edge tables:
 
 # Helper functions
-getID <- function(s) {
+# ================
+getID <- function(s) { # gets the GO id from an id: record
   s <- gsub("id: ", "", s)
   s <- gsub(" !.*$", "", s)
   return(s)
 }
 
-getName <- function(s) {
+getName <- function(s) {  # gets the term name from a name: record
   s <- gsub("name: ", "", s)
   s <- gsub(" !.*$", "", s)
   return(s)
 }
 
-getNS <- function (s) {
+getNS <- function (s) { # reads the namespace: and maps it to a one-letter code
   if      (s == "namespace: biological_process") { ns <- "P" }
   else if (s == "namespace: molecular_function") { ns <- "F" }
   else if (s == "namespace: cellular_component") { ns <- "C" }
@@ -678,26 +700,28 @@ getNS <- function (s) {
   return(ns)
 }
 
-getIsa <- function(s) {
+getIsa <- function(s) { # gets the type and GO id for an is_a record
   s <- gsub("is_a: ", "is_a ", s)
   s <- gsub(" !.*$", "", s)
   return(s)  # bring in form <type> <term_ID>
 }
 
-getRel <- function(s) {
+getRel <- function(s) { # gets type and GO id for a relationship: record
   s <- gsub("relationship: ", "", s)
   s <- gsub(" !.*$", "", s)
   return(s)  # bring in form <type> <term_ID>
 }
 
-splitRel <- function(s) {
+splitRel <- function(s) { # splits type and GO id into a two-element vector
   s <- unlist(strsplit(s, " "))
   s[1] <- GO$edgeType[s[1], "ID"]  # set the first element to
-  # the ID of this relation
+                                   # the ID of this relation
   return(s)
 }
 
-# process all [Term]s
+# Finished preparations. NOw ...
+# Process all [Term]s
+# ===================
 for (i in 1:(length(idx) - 1)) {
   pBar(i, length(idx))
 
@@ -750,26 +774,28 @@ GO$term[sel, ]
 # (ii): get the distribution of isa relationships
 sel <- GO$edge$edgeType == "isa"
 x <- table(GO$edge$from[sel])
-hist(x)
-x[x == max(x)]
-GO$term[names(x)[x == max(x)], ]
+hist(x, col = myCols)
+x[x == max(x)]                       # term with largest number of parents
+GO$term[names(x)[x == max(x)], ]     # what is this?
 
-# Find this in txt
+# Find this term in txt and print the information
 sel <- grep(paste("id:", names(x)[x == max(x)]), txt)
 first <- idx[which(idx > sel)[1] - 1]
 last <-  idx[which(idx > sel)[1]] - 1
 cat(txt[first:last], sep = "\n")
 
 # (iii): get the distribution of rel relationships
-sel <- GO$edge$edgeType != "isa"
+sel <- GO$edge$edgeType != "isa"  # NOT isa
+(x <- table(GO$edge$edgeType[sel]))  # relationship types
 x <- table(GO$edge$from[sel])
-hist(x)
+summary(as.numeric(x))
 x[x == max(x)]
 n <- names(x[x == max(x)])
 GO$term[GO$term$ID %in% n, ]
 
-# Find the third one in txt
-sel <- grep(paste("id:", n[3]), txt)
+# Find the third one (or any other)in txt
+myPick <- 3
+sel <- grep(paste("id:", n[myPick]), txt)
 first <- idx[which(idx > sel)[1] - 1]
 last <-  idx[which(idx > sel)[1]] - 1
 cat(txt[first:last], sep = "\n")
@@ -809,9 +835,13 @@ GO$gene <- gene
 
 saveRDS(GO, file.path(DATADIR, "GO.rds")) # Compressed: only 3.5 Mb
 
+# read it back whenever you need it
+# x <- readRDS(file.path(DATADIR, "GO.rds"))
+
+
 #
-# =    3  Validate it  =========================================================
-# Are our assumptions correct
+# ==   3.1  Validate GO Term data  =============================================
+# TBC
 #
 # Statistics:
 #  - number of leafs
@@ -831,12 +861,6 @@ tmp <- read.delim(myFile,
 sel <- match(GO$gene$sym, tmp$ID)
 sum(is.na(sel))  # 1,252 genes could not be mapped
 
-
-
-
-
-# Statistics:
-#  - number of leafs
 
 
 # =    5  Next steps  ==========================================================
